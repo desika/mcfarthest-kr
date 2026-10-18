@@ -1,0 +1,1125 @@
+<title>편의점에서 가장 먼 곳</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+/* 레이아웃: 첫 화면 한 장에 지도와 조작부 — PC 는 지도 왼쪽·조작 오른쪽, 폰은 제목·지도·조작 세로. 그 아래로 결과·공식·제작기 */
+:root {
+  --bg: #080c0e;
+  --panel: #10171a;
+  --line: #1f2b2f;
+  --land: #151d20;
+  --fg: #e6eef0;
+  --muted: #84969b;
+  --amber: #5fe3c6;
+  --ember: #3d8bff;
+  --cover: #0c3036;
+  --edge: rgba(95, 227, 198, 0.62);
+  --dot: #c3cdd0;
+  --gs: #3d8bff;
+  --cu: #8bd94e;
+  --se: #ff9f43;
+  --e24: #ffd84d;
+  --font-kr: "Pretendard", "Pretendard Variable", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-num: "Space Grotesk", "Pretendard", "Noto Sans KR", ui-sans-serif, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-kr);
+  font-size: 17px; line-height: 1.65; -webkit-font-smoothing: antialiased; word-break: keep-all;
+}
+.wrap {
+  max-width: 760px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 64px;
+  display: flex; flex-direction: column; gap: 40px;
+}
+.wrap > *, .eq, .stage, .answer { min-width: 0; max-width: 100%; }
+h1 {
+  font-size: clamp(34px, 7.4vw, 56px); line-height: 1.12; font-weight: 900;
+  letter-spacing: -0.02em; margin: 0; text-wrap: balance;
+}
+h1 .far {
+  background: linear-gradient(90deg, var(--ember), var(--amber));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.lede { color: var(--muted); font-size: 19px; margin: 10px 0 0; }
+h2 { font-size: 26px; font-weight: 800; margin: 0 0 14px; letter-spacing: -0.01em; text-wrap: balance; }
+.eyebrow {
+  font-family: var(--font-num); font-size: 13px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--muted); font-weight: 500;
+}
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+
+/* 지도 */
+.stage {
+  height: 100svh; min-height: 540px; max-width: 1280px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 14px;
+  display: grid; gap: 12px 32px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas: "head" "map" "panel";
+}
+.stage > * { min-width: 0; }
+.head { grid-area: head; }
+.stage h1 { font-size: clamp(26px, 6.6vw, 46px); }
+.stage .lede { font-size: 16px; margin-top: 4px; }
+.panel { grid-area: panel; display: flex; flex-direction: column; gap: 12px; }
+.map {
+  grid-area: map; position: relative; width: 100%; height: 100%; min-height: 0;
+  border-radius: 14px; overflow: hidden; background: var(--bg); border: 1px solid var(--line);
+}
+@media (min-width: 900px) {
+  .stage {
+    padding-block: 24px;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: "map head" "map panel";
+  }
+  .panel { justify-content: flex-end; gap: 18px; }
+  .stage .lede { font-size: 18px; margin-top: 8px; }
+}
+@media (max-width: 899px) {
+  .stage .eyebrow:first-child { display: none; }
+  .panel .pairs-line { display: none; }
+}
+.map canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+.map canvas.dragging { cursor: grabbing; }
+.recenter {
+  position: absolute; top: 12px; right: 12px; height: 38px; padding: 0 16px; border-radius: 19px; cursor: pointer;
+  border: 1px solid var(--line); background: rgba(8, 12, 14, 0.82); color: var(--fg); font: 600 15px var(--font-kr);
+}
+.recenter:hover { border-color: var(--amber); }
+.recenter:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.hint { color: var(--muted); font-size: 14px; margin: 0; }
+.map .tag {
+  position: absolute; left: 14px; bottom: 12px; font-size: 13px; color: var(--muted);
+  background: rgba(8, 12, 14, 0.72); padding: 4px 10px; border-radius: 6px;
+}
+.map .credit {
+  position: absolute; right: 10px; bottom: 8px; font-size: 11px; color: var(--muted);
+  background: rgba(8, 12, 14, 0.72); padding: 2px 8px; border-radius: 4px;
+}
+.brands { display: flex; flex-wrap: wrap; gap: 8px; }
+.brands button {
+  display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 13px; border-radius: 18px; cursor: pointer;
+  border: 1px solid var(--line); background: transparent; color: var(--muted); font: 600 15px var(--font-kr);
+}
+.brands button b { color: var(--fg); font: 500 14px var(--font-num); }
+.brands button i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.brands button[aria-pressed="true"] { border-color: var(--amber); background: var(--panel); color: var(--fg); }
+.brands button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.pop {
+  position: absolute; z-index: 3; width: min(300px, calc(100% - 24px)); padding: 12px 14px 12px; border-radius: 12px;
+  background: rgba(16, 23, 26, 0.96); border: 1px solid var(--line); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  font-size: 15px; line-height: 1.45;
+}
+.pop .x { position: absolute; top: 6px; right: 6px; width: 30px; height: 30px; border: 0; border-radius: 15px; background: transparent; color: var(--muted); font-size: 20px; cursor: pointer; }
+.pop .x:hover { color: var(--fg); }
+.pop .h { color: var(--muted); font-size: 13px; margin: 0 26px 6px 0; }
+.pop ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.pop li { display: grid; grid-template-columns: 10px 1fr; gap: 8px; align-items: baseline; }
+.pop li i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; transform: translateY(1px); }
+.pop li span { display: block; color: var(--muted); font-size: 13px; }
+.pop .d { margin-top: 8px; font-family: var(--font-num); color: var(--amber); font-size: 18px; font-weight: 700; }
+.pop .d small { color: var(--muted); font: 400 13px var(--font-kr); margin-left: 6px; }
+.tip {
+  position: absolute; z-index: 2; pointer-events: none; padding: 5px 10px; border-radius: 8px; white-space: nowrap;
+  background: rgba(16, 23, 26, 0.94); border: 1px solid var(--line); font-size: 14px; color: var(--fg);
+}
+.tip i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+.tip span { color: var(--muted); margin-left: 6px; }
+.map canvas.over { cursor: pointer; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 15px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.legend b { color: var(--fg); font-weight: 500; }
+.stats { display: grid; grid-template-columns: 1fr auto; gap: 6px 20px; align-items: end; }
+.stats .big { font-family: var(--font-num); font-weight: 700; line-height: 1; font-size: clamp(36px, 9vw, 54px); }
+.stats .big small { font-size: 0.42em; font-weight: 500; color: var(--muted); margin-left: 6px; }
+.r-val { color: var(--amber); }
+.n-val { color: var(--fg); text-align: right; }
+.stats .right { text-align: right; }
+.cover-line { font-size: 17px; margin: 0; }
+.cover-line b { font-family: var(--font-num); font-size: 22px; }
+.pairs-line { color: var(--muted); font-size: 16px; margin: 0; }
+.pairs-line b { color: var(--fg); font-family: var(--font-num); font-weight: 500; }
+
+.controls { display: flex; flex-direction: column; gap: 12px; }
+.row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.play {
+  flex: 0 0 auto; height: 48px; padding: 0 20px; border-radius: 24px; border: 0; cursor: pointer;
+  background: var(--amber); color: #06231d; font: 700 18px var(--font-kr);
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.play:hover { filter: brightness(1.06); }
+.play:focus-visible, .seg button:focus-visible, input[type=range]:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
+.play svg { width: 18px; height: 18px; }
+input[type=range] { flex: 1 1 200px; min-width: 0; accent-color: var(--amber); height: 32px; }
+.seg { display: flex; gap: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; width: 100%; }
+.seg button {
+  flex: 1 1 0; min-width: 0; padding: 10px 6px; background: transparent; color: var(--muted);
+  border: 0; border-right: 1px solid var(--line); font: 600 16px var(--font-kr); cursor: pointer;
+}
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--panel); color: var(--fg); box-shadow: inset 0 -3px 0 var(--amber); }
+
+/* 결과 */
+.answer { display: flex; flex-direction: column; gap: 16px; }
+.answer .place { font-size: clamp(28px, 6vw, 38px); font-weight: 800; line-height: 1.2; margin: 0; text-wrap: balance; }
+.answer .sub { color: var(--muted); margin: 0; }
+.answer .dist { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.answer .dist .num { font-size: 40px; font-weight: 700; color: var(--amber); line-height: 1; }
+.zoom { position: relative; width: 100%; aspect-ratio: 1 / 0.8; max-width: 100%; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); }
+.zoom canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.stores { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.stores li { display: grid; grid-template-columns: 28px 1fr auto; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+.stores .k { font-family: var(--font-num); color: var(--amber); font-weight: 700; }
+.stores .nm { min-width: 0; }
+.stores .nm span { display: block; color: var(--muted); font-size: 14px; }
+.stores .d { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+
+/* 공식 */
+.math { display: flex; flex-direction: column; gap: 0; border-top: 1px solid var(--line); }
+.eq { padding: 20px 0; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+.eq h3 { font-size: 19px; margin: 0; font-weight: 700; }
+.eq p { margin: 0; color: var(--muted); font-size: 16px; max-width: 62ch; }
+.eq .tex { overflow-x: auto; padding: 4px 0; }
+.eq math { font-size: 1.22em; color: var(--fg); }
+.eq .live { color: var(--fg); font-size: 16px; }
+.eq .live b { color: var(--amber); font-family: var(--font-num); }
+
+.chart svg { width: 100%; height: auto; display: block; }
+.chart text { font-family: var(--font-num); font-size: 12px; fill: var(--muted); }
+
+.make ol { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 10px; }
+.make li::marker { font-family: var(--font-num); color: var(--amber); }
+.make p { margin: 0 0 10px; }
+.make ul { margin: 0; padding-left: 1.1em; color: var(--muted); display: flex; flex-direction: column; gap: 6px; }
+.foot { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 14px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<section class="stage" aria-label="반지름을 키우는 지도">
+  <header class="head">
+    <div class="eyebrow">Convenience-store farthest point · Korea</div>
+    <h1>편의점에서 <span class="far">가장 먼</span> 곳</h1>
+    <p class="lede">대한민국에서 편의점과 가장 멀리 떨어질 수 있는 곳은 어디일까요</p>
+  </header>
+    <div class="map" id="map"><canvas id="cv" aria-label="편의점마다 같은 반지름의 원을 그린 지도"></canvas><div class="tag" id="maptag">서울</div><button type="button" class="recenter" id="recenter" hidden>자동 시점</button><div class="credit">배경지도 © Esri · 지명 통계청</div><div class="pop" id="pop" hidden></div><div class="tip" id="tip" hidden></div></div>
+  <div class="panel">
+    <div class="brands" role="group" aria-label="편의점 브랜드">
+      <button type="button" data-b="all" aria-pressed="true"><i style="background:var(--fg)"></i>전체 <b id="bc-all"></b></button>
+      <button type="button" data-b="gs" aria-pressed="false"><i style="background:var(--gs)"></i>GS25 <b id="bc-gs"></b></button>
+      <button type="button" data-b="cu" aria-pressed="false"><i style="background:var(--cu)"></i>CU <b id="bc-cu"></b></button>
+      <button type="button" data-b="se" aria-pressed="false"><i style="background:var(--se)"></i>세븐일레븐 <b id="bc-se"></b></button>
+      <button type="button" data-b="e24" aria-pressed="false"><i style="background:var(--e24)"></i>이마트24 <b id="bc-e24"></b></button>
+    </div>
+    <div class="stats">
+      <div>
+        <div class="eyebrow">Radius</div>
+        <div class="big r-val"><span id="rv">8</span><small id="ru">km</small></div>
+      </div>
+      <div class="right">
+        <div class="eyebrow" id="nlabel">편의점</div>
+        <div class="big n-val num" id="nv">54,446</div>
+      </div>
+    </div>
+    <div>
+      <p class="cover-line">국토의 <b id="cov">0%</b>가 이 거리 안에 편의점이 있습니다</p>
+      <p class="pairs-line">서로 겹친 원 <b id="pairs">0</b>쌍</p>
+    </div>
+    <div class="controls">
+      <div class="row">
+        <button class="play" id="play" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><path id="playIcon" d="M5 3l12 7-12 7z" fill="currentColor"/></svg><span id="playTxt">재생</span></button>
+        <input type="range" id="slider" min="0" max="1000" value="600" aria-label="반지름">
+      </div>
+      <div class="seg" role="group" aria-label="범위">
+        <button type="button" id="seg-south" data-k="south" aria-pressed="true">DMZ 밖 본토</button>
+        <button type="button" id="seg-mainland" data-k="mainland" aria-pressed="false">DMZ 포함</button>
+        <button type="button" id="seg-all" data-k="all" aria-pressed="false">섬 포함</button>
+      </div>
+      <p class="hint">지도는 끌어서 옮기고 휠이나 두 손가락, 더블클릭으로 확대합니다. 점을 누르면 편의점 이름이, 빈 곳을 누르면 가장 가까운 편의점이 나옵니다</p>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+  <section class="answer" aria-live="polite">
+    <div class="eyebrow">Answer · <span id="ansSet">전체 편의점</span></div>
+    <p class="place" id="place">경북 울진군 수비면</p>
+    <p class="sub" id="placeNote"></p>
+    <div class="dist"><span class="num" id="rstar">19.83 km</span><span class="sub">가장 가까운 편의점까지 직선거리</span></div>
+    <div class="zoom"><canvas id="zv" aria-label="최원점 주변 확대"></canvas></div>
+    <ul class="stores" id="stores"></ul>
+    <p class="sub num" id="coord"></p>
+  </section>
+
+  <section>
+    <h2>계산에 쓴 공식</h2>
+    <div class="math">
+      <div class="eq">
+        <h3>두 점 사이 거리</h3>
+        <p>지구를 반지름 6,371 km 구로 보고 대원거리를 씁니다. 실제 계산은 두 점을 단위벡터로 바꿔 현의 길이 c를 구한 뒤 거리로 되돌립니다.</p>
+        <div class="tex" data-tex="d = 2R\arcsin\sqrt{\sin^2\tfrac{\Delta\varphi}{2}+\cos\varphi_1\cos\varphi_2\sin^2\tfrac{\Delta\lambda}{2}} \;=\; 2R\arcsin\tfrac{c}{2}"></div>
+      </div>
+      <div class="eq">
+        <h3>두 원이 만나는 조건과 교차점</h3>
+        <p>반지름이 r인 두 원은 중심 사이 거리 ℓ이 2r 이하일 때 만납니다. 교차점은 두 중심의 수직이등분선 위에 있고, r이 커질수록 그 선을 따라 바깥으로 미끄러집니다.</p>
+        <div class="tex" data-tex="\ell=\lVert s_i-s_j\rVert\le 2r,\qquad P_\pm = m \pm \sqrt{r^2-\left(\tfrac{\ell}{2}\right)^2}\,\hat n"></div>
+        <p class="live">지금 반지름에서 서로 겹친 원 <b id="pairs2">0</b>쌍 · 교차점 <b id="pts2">0</b>개</p>
+      </div>
+      <div class="eq">
+        <h3>원과 원이 맞닿는 선 = 보로노이 경계</h3>
+        <p>지도에서 노란 선은 두 원이 처음 만난 뒤 계속 맞닿아 있는 자리입니다. 그 선 위의 점은 두 편의점에서 거리가 같습니다. 각 편의점이 가장 가까운 영역을 나누는 경계와 같습니다.</p>
+        <div class="tex" data-tex="V_i=\{\,p:\ d(p,s_i)\le d(p,s_j)\ \ \forall j\,\}"></div>
+      </div>
+      <div class="eq">
+        <h3>세 원이 한 점에서 만날 때 = 외심</h3>
+        <p>세 원이 동시에 한 점에서 만나는 순간의 그 점이 보로노이 꼭짓점이고, 세 편의점이 이루는 삼각형의 외심입니다. 구 위에서는 세 단위벡터로 만든 평면의 법선 방향이 곧 외심입니다.</p>
+        <div class="tex" data-tex="R_\triangle=\frac{abc}{4K},\qquad \hat o=\frac{(b-a)\times(c-a)}{\lVert (b-a)\times(c-a)\rVert}"></div>
+        <p class="live">전국 편의점으로 만든 들로네 삼각형 <b id="nv2">0</b>개, 외심 후보도 같은 수</p>
+      </div>
+      <div class="eq">
+        <h3>덮인 비율</h3>
+        <p>국토 L 가운데 어느 편의점의 원 안에라도 들어간 넓이의 비율입니다.</p>
+        <div class="tex" data-tex="C(r)=\frac{\left|\,L\cap\bigcup_i B(s_i,r)\,\right|}{|L|}"></div>
+        <div class="chart" id="chart"></div>
+        <p class="live" id="halfline"></p>
+      </div>
+      <div class="eq">
+        <h3>가장 먼 곳</h3>
+        <p>모든 지점에서 가장 가까운 편의점까지의 거리를 재고, 그 값이 가장 큰 지점을 고릅니다. 원을 키울 때 마지막까지 덮이지 않고 남는 한 점이 바로 이 점이고, 그때의 반지름이 답입니다. 후보는 육지 안의 외심과 해안선 위의 점 두 종류뿐입니다.</p>
+        <div class="tex" data-tex="p^*=\arg\max_{p\in L}\ \min_i\ d(p,s_i),\qquad r^*=\min_i d(p^*,s_i)"></div>
+        <p class="live" id="rstarline"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="make">
+    <h2>만든 방법</h2>
+    <ol>
+      <li>소상공인시장진흥공단 상가정보 2026년 6월판 전국 파일에서 업종이 편의점인 54,446곳을 뽑았습니다. 같은 좌표를 합치면 49,244곳입니다.</li>
+      <li>통계청 2013년 시도 경계를 합쳐 섬 2,021개를 포함한 국토 폴리곤을 만들었습니다. DMZ 밖 본토는 Natural Earth의 DMZ 남방한계선 북쪽을 잘라냈습니다.</li>
+      <li>편의점 좌표를 단위구 위의 벡터로 바꾸고 볼록껍질을 구했습니다. 껍질의 삼각형 면 하나가 구면 들로네 삼각형 하나이고, 면의 법선이 외심입니다. 0.3초 걸립니다.</li>
+      <li>육지 안에 있는 외심 9만여 개와 해안선을 20 m 간격으로 찍은 점 30만여 개를 KD트리로 가장 가까운 편의점과 대조해 최댓값을 골랐습니다.</li>
+      <li>덮인 비율은 국토를 약 550 m 격자 135만 칸으로 나눠 각 칸의 거리를 구한 뒤 넓이 가중으로 누적했습니다.</li>
+    </ol>
+    <p style="margin-top:18px">한계</p>
+    <ul>
+      <li>상가정보의 업종 분류를 그대로 따랐습니다. 농협 지소처럼 편의점으로 분류된 매장도 포함되고, 등록되지 않은 매장은 빠집니다. 흑산도에는 편의점으로 분류된 매장이 없어서 가거도의 최근접이 진도가 됐습니다.</li>
+      <li>경계가 2013년 기준이라 그 뒤 생긴 매립지는 반영되지 않았습니다.</li>
+      <li>모든 거리는 직선 대원거리입니다. 산길로 걸으면 훨씬 멉니다.</li>
+    </ul>
+  </section>
+
+  <div class="foot">편의점 위치: 소상공인시장진흥공단 상가정보 2026-06 · 경계: 통계청 2013 · DMZ: Natural Earth · 배경지도: Esri World Dark Gray · 지명: 통계청 행정구역 2013 · 착안: everything.in.math의 McFarthest point</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-delaunay@6.0.4/dist/d3-delaunay.min.js"></script>
+<!--DATA-->
+<script>
+(() => {
+const K = window.KR, KF = window.KF;
+const $ = id => document.getElementById(id);
+const fmt = n => Math.round(n).toLocaleString("ko-KR");
+
+// ── 점포 복원: 전체 배열 A*, 지금 보는 묶음은 N · X · Y · FX · BR ──
+const raw = Uint8Array.from(atob(K.stores), c => c.charCodeAt(0));
+const u16 = new Uint16Array(raw.buffer);
+const AN = u16.length / 2;
+const AX = new Float32Array(AN), AY = new Float32Array(AN), AFX = new Float32Array(AN);
+for (let i = 0; i < AN; i++) {
+  AX[i] = u16[2 * i] / 100; AY[i] = u16[2 * i + 1] / 100;
+  const lat = K.lat1 - AY[i] / K.kmy;
+  AFX[i] = K.kx / Math.cos(lat * Math.PI / 180);   // 동서 방향 반지름 보정
+}
+const ABR = Uint8Array.from(atob(K.brands), c => c.charCodeAt(0));     // 점 색깔: 0 그 밖 1 GS25 2 CU 3 세븐일레븐 4 이마트24
+const AMASK = Uint8Array.from(atob(K.brandMask), c => c.charCodeAt(0)); // 그 자리에 있는 브랜드 비트
+const BCODE = { all: -1, gs: 1, cu: 2, se: 3, e24: 4 };
+let N = AN, X = AX, Y = AY, FX = AFX, BR = ABR;
+const SUBS = {};
+function subset(b) {
+  if (SUBS[b]) return SUBS[b];
+  if (b === "all") return (SUBS[b] = { b, N: AN, X: AX, Y: AY, FX: AFX, BR: ABR, UI: null, vor: null });
+  const bit = 1 << BCODE[b], idx = [];
+  for (let i = 0; i < AN; i++) if (AMASK[i] & bit) idx.push(i);
+  const n = idx.length, o = { b, N: n, X: new Float32Array(n), Y: new Float32Array(n), FX: new Float32Array(n), BR: new Uint8Array(n).fill(BCODE[b]), UI: Uint32Array.from(idx), vor: null };
+  idx.forEach((g, j) => { o.X[j] = AX[g]; o.Y[j] = AY[g]; o.FX[j] = AFX[g]; });
+  return (SUBS[b] = o);
+}
+// 점포 이름: 같은 자리 점포 목록 (처음 누를 때 만듦)
+let USTORES = null;
+function storesAt(g) {
+  if (!USTORES) {
+    USTORES = Array.from({ length: AN }, () => []);
+    const su = new Uint16Array(Uint8Array.from(atob(K.storeU), c => c.charCodeAt(0)).buffer);
+    const sd = new Uint16Array(Uint8Array.from(atob(K.storeD), c => c.charCodeAt(0)).buffer);
+    const sb = Uint8Array.from(atob(K.storeB), c => c.charCodeAt(0));
+    for (let j = 0; j < su.length; j++) USTORES[su[j]].push({ name: K.names[j], dong: K.dongs[sd[j]], b: sb[j] });
+  }
+  return USTORES[g];
+}
+
+// ── 육지 경로: 세 단계 단순화, 링마다 테두리 상자 ──
+let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+const LOD = [...K.landLod, K.land].map(rings => rings.map(r => {
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  for (let j = 0; j < r.length; j += 2) { x0 = Math.min(x0, r[j]); x1 = Math.max(x1, r[j]); y0 = Math.min(y0, r[j + 1]); y1 = Math.max(y1, r[j + 1]); }
+  return { p: r, x0, y0, x1, y1 };
+}));
+for (const r of LOD[2]) { minX = Math.min(minX, r.x0); maxX = Math.max(maxX, r.x1); minY = Math.min(minY, r.y0); maxY = Math.max(maxY, r.y1); }
+// 화면에 걸친 링만 모아 육지·바다 경로를 만든다. 같은 시점이면 다시 씀
+function landPaths(view, cam, b) {
+  const lod = cam.s < 3 ? 0 : cam.s < 14 ? 1 : 2;
+  const key = lod + "|" + b.x0.toFixed(2) + "|" + b.y0.toFixed(2) + "|" + b.x1.toFixed(2) + "|" + b.y1.toFixed(2);
+  if (view.LPk === key) return view.LP;
+  const landP = new Path2D(), sea = new Path2D();
+  const m = 5 / cam.s;
+  sea.rect(b.x0 - m, b.y0 - m, b.x1 - b.x0 + 2 * m, b.y1 - b.y0 + 2 * m);
+  for (const r of LOD[lod]) {
+    if (r.x1 < b.x0 || r.x0 > b.x1 || r.y1 < b.y0 || r.y0 > b.y1) continue;
+    const q = r.p, sub = new Path2D();
+    sub.moveTo(q[0], q[1]); for (let j = 2; j < q.length; j += 2) sub.lineTo(q[j], q[j + 1]); sub.closePath();
+    landP.addPath(sub); sea.addPath(sub);
+  }
+  view.LP = { land: landP, sea }; view.LPk = key;
+  return view.LP;
+}
+
+// ── 보로노이 칸과 경계 ──
+// 확대 화면용 벡터 그림은 지도 좌표계의 평면 원과 평면 보로노이를 쓴다. 칸끼리 틈 없이 맞물리고,
+// 동서 길이 오차는 북위 36° 기준 최대 3~4%. 전국 화면·정답 확대·정답 계산은 정확한 대원거리 거리장.
+// 칸 i 는 반평면들의 교집합: nx·x + ny·y − c ≥ 0 (법선 단위 길이로 정규화 → 값이 곧 경계까지 거리)
+let XP = X;
+let E = 0, SEG = null, EA = null, HL = null, CS = null, CH = null, RHO = null, vorDone = false;   // RHO: 점포에서 자기 칸 가장 먼 꼭짓점까지
+function ensureVoronoi() {
+  if (vorDone) return; vorDone = true;
+try {
+  const pts = new Float64Array(2 * N);
+  let ax0 = 1e9, ax1 = -1e9;
+  for (let i = 0; i < N; i++) { pts[2 * i] = XP[i]; pts[2 * i + 1] = Y[i]; ax0 = Math.min(ax0, XP[i]); ax1 = Math.max(ax1, XP[i]); }
+  const dl = new d3.Delaunay(pts);
+  const vor = dl.voronoi([ax0 - 120, minY - 120, ax1 + 120, maxY + 120]);
+  const cc = vor.circumcenters, T = dl.triangles, HE = dl.halfedges;
+  SEG = new Float32Array(T.length * 2); EA = new Uint32Array(T.length); HL = new Float32Array(T.length);
+  for (let e = 0; e < T.length; e++) {
+    const j = HE[e];
+    if (j < e) continue;                       // 이웃 쌍마다 한 번, 바깥 껍질은 제외
+    const a = T[e], b = T[e % 3 === 2 ? e - 2 : e + 1];
+    const t1 = Math.floor(e / 3), t2 = Math.floor(j / 3);
+    SEG[4 * E] = cc[2 * t1]; SEG[4 * E + 1] = cc[2 * t1 + 1]; SEG[4 * E + 2] = cc[2 * t2]; SEG[4 * E + 3] = cc[2 * t2 + 1];
+    EA[E] = a;
+    HL[E] = Math.hypot(XP[a] - XP[b], Y[a] - Y[b]) / 2;   // ℓ/2 — r 이 이보다 작으면 두 원은 아직 안 만남
+    E++;
+  }
+  CS = new Uint32Array(N + 1); RHO = new Float32Array(N).fill(1e9); const hp = [];
+  for (let i = 0; i < N; i++) {
+    const poly = vor.cellPolygon(i);
+    if (poly) { let m = 0; for (const [vx, vy] of poly) m = Math.max(m, (vx - XP[i]) ** 2 + (vy - Y[i]) ** 2); RHO[i] = Math.sqrt(m); }
+    if (poly) for (let k = 0; k < poly.length - 1; k++) {
+      const [x1, y1] = poly[k], [x2, y2] = poly[k + 1];
+      let nx = y1 - y2, ny = x2 - x1; const L = Math.hypot(nx, ny); if (L < 1e-12) continue;
+      nx /= L; ny /= L; let c = nx * x1 + ny * y1;
+      if (nx * XP[i] + ny * Y[i] - c < 0) { nx = -nx; ny = -ny; c = -c; }
+      hp.push(nx, ny, c);
+    }
+    CS[i + 1] = hp.length / 3;
+  }
+  CH = Float64Array.from(hp);
+} catch (e) { E = 0; CS = null; }
+}
+
+function edgesPath(r, x0, y0, x1, y1) {
+  const p = new Path2D();
+  for (let k = 0; k < E; k++) {
+    if (HL[k] > r) continue;
+    const i = EA[k], f = 1;
+    const ax = SEG[4 * k], ay = SEG[4 * k + 1], bx = SEG[4 * k + 2], by = SEG[4 * k + 3];
+    if (Math.max(ax, bx) * f < x0 || Math.min(ax, bx) * f > x1 || Math.max(ay, by) < y0 || Math.min(ay, by) > y1) continue;
+    // |P(t) − s_i|² ≤ r² 을 t 에 대해 풂 → 선분 중 원 안 구간, 양 끝이 두 원의 교차점
+    const px = ax - XP[i], py = ay - Y[i], dx = bx - ax, dy = by - ay;
+    const A2 = dx * dx + dy * dy, B2 = px * dx + py * dy, C2 = px * px + py * py - r * r;
+    const D = B2 * B2 - A2 * C2;
+    if (D < 0 || A2 === 0) continue;
+    const sq = Math.sqrt(D), ta = Math.max(0, (-B2 - sq) / A2), tb = Math.min(1, (-B2 + sq) / A2);
+    if (ta >= tb) continue;
+    p.moveTo((ax + dx * ta) * f, ay + dy * ta); p.lineTo((ax + dx * tb) * f, ay + dy * tb);
+  }
+  return p;
+}
+
+function useSet(b) {
+  if (curSet) curSet.vor = { E, SEG, EA, HL, CS, CH, RHO, vorDone };
+  curSet = subset(b); ({ N, X, Y, FX, BR } = curSet); XP = X;
+  ({ E, SEG, EA, HL, CS, CH, RHO, vorDone } = curSet.vor || { E: 0, SEG: null, EA: null, HL: null, CS: null, CH: null, RHO: null, vorDone: false });
+  if (b !== "all") ensureVoronoi();   // 브랜드 하나는 점이 적어 바로 만든다. 화면 거리장의 일감 줄이기에 필요
+}
+let curSet = null;
+
+// 원 ∩ 자기 칸 — 칸끼리 겹치지 않으므로 픽셀마다 한 번만 칠해진다 (Sutherland–Hodgman 볼록 절단)
+let B1 = new Float64Array(4096), B2 = new Float64Array(4096);
+function clipToCell(i, n0) {
+  let a = B1, b = B2, cnt = n0;
+  for (let h = CS[i]; h < CS[i + 1] && cnt; h++) {
+    const nx = CH[3 * h], ny = CH[3 * h + 1], c = CH[3 * h + 2];
+    let m = 0, px = a[2 * cnt - 2], py = a[2 * cnt - 1], pv = nx * px + ny * py - c;
+    for (let k = 0; k < cnt; k++) {
+      const qx = a[2 * k], qy = a[2 * k + 1], qv = nx * qx + ny * qy - c;
+      if ((qv >= 0) !== (pv >= 0)) { const t = pv / (pv - qv); b[2 * m] = px + (qx - px) * t; b[2 * m + 1] = py + (qy - py) * t; m++; }
+      if (qv >= 0) { b[2 * m] = qx; b[2 * m + 1] = qy; m++; }
+      px = qx; py = qy; pv = qv;
+    }
+    const tmp = a; a = b; b = tmp; cnt = m;
+  }
+  return [a, cnt];
+}
+function unionPaths(r, s, x0, y0, x1, y1) {
+  const fill = new Path2D(), rim = new Path2D();
+  const n = Math.max(16, Math.min(160, Math.ceil(2 * Math.PI * r * s / 5)));
+  const co = new Float64Array(n), si = new Float64Array(n);
+  for (let k = 0; k < n; k++) { co[k] = Math.cos(2 * Math.PI * k / n); si[k] = Math.sin(2 * Math.PI * k / n); }
+  const inside = new Uint8Array(n);
+  for (let i = 0; i < N; i++) {
+    const f = 1, X0 = X[i], Y0 = Y[i];
+    if (X0 + r * f < x0 || X0 - r * f > x1 || Y0 + r < y0 || Y0 - r > y1) continue;
+    const cx = XP[i];
+    let full = true;
+    for (let h = CS[i]; h < CS[i + 1]; h++) if (CH[3 * h] * cx + CH[3 * h + 1] * Y0 - CH[3 * h + 2] < r) { full = false; break; }
+    if (full) {                               // 원 전체가 칸 안: 그대로
+      fill.moveTo(X0 + r * f, Y0); fill.ellipse(X0, Y0, r * f, r, 0, 0, 2 * Math.PI);
+      rim.moveTo(X0 + r * f, Y0); rim.ellipse(X0, Y0, r * f, r, 0, 0, 2 * Math.PI);
+      continue;
+    }
+    for (let k = 0; k < n; k++) {
+      const vx = cx + r * co[k], vy = Y0 + r * si[k];
+      B1[2 * k] = vx; B1[2 * k + 1] = vy;
+      let ok = 1;
+      for (let h = CS[i]; h < CS[i + 1]; h++) if (CH[3 * h] * vx + CH[3 * h + 1] * vy - CH[3 * h + 2] < 0) { ok = 0; break; }
+      inside[k] = ok;
+    }
+    // 테두리: 칸 안에 남은 원호만 = 합집합의 바깥선
+    for (let k = 0; k < n; k++) {
+      const k2 = (k + 1) % n;
+      if (inside[k] && inside[k2]) { rim.moveTo((cx + r * co[k]) * f, Y0 + r * si[k]); rim.lineTo((cx + r * co[k2]) * f, Y0 + r * si[k2]); }
+    }
+    const [buf, m] = clipToCell(i, n);
+    if (m < 3) continue;
+    fill.moveTo(buf[0] * f, buf[1]);
+    for (let k = 1; k < m; k++) fill.lineTo(buf[2 * k] * f, buf[2 * k + 1]);   // closePath 는 넣지 않음: 수만 번 부르면 크롬에서 수십 초. 채우기는 알아서 닫힘
+  }
+  return { fill, rim };
+}
+
+const SLL = new Path2D();
+K.sll.forEach((p, i) => i ? SLL.lineTo(p[0], p[1]) : SLL.moveTo(p[0], p[1]));
+
+// ── 상태 ──
+const st = { k: "south", b: "all", r: 8, playing: false, cam: null, pick: null };
+const SET = () => K.sets[st.b], RES = () => K.sets[st.b].results[st.k];
+const CR = K.curveR;
+const rMin = 0.1;
+const rMax = () => RES().r * 1.25;
+const sliderToR = v => rMin * Math.pow(rMax() / rMin, v / 1000);
+const rToSlider = r => 1000 * Math.log(r / rMin) / Math.log(rMax() / rMin);
+
+function interp(xs, ys, x) {
+  if (x <= xs[0]) return ys[0];
+  if (x >= xs[xs.length - 1]) return ys[ys.length - 1];
+  let lo = 0, hi = xs.length - 1;
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (xs[m] <= x) lo = m; else hi = m; }
+  const t = (x - xs[lo]) / (xs[hi] - xs[lo]);
+  return ys[lo] + t * (ys[hi] - ys[lo]);
+}
+
+// ── 캔버스 ──
+function setup(cv) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = cv.clientWidth, h = cv.clientHeight;
+  cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+  const layer = document.createElement("canvas"); layer.width = cv.width; layer.height = cv.height;
+  return { ctx: cv.getContext("2d"), layer, lctx: layer.getContext("2d"), w, h, dpr };
+}
+let M = null, Z = null;
+
+function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+const COL = {};
+function readColors() { for (const k of ["bg", "land", "cover", "edge", "dot", "amber", "fg", "muted", "ember", "gs", "cu", "se", "e24"]) COL[k] = css("--" + k); }
+
+// ── 거리장 래스터: 픽셀마다 가장 가까운 편의점까지 거리 ──
+// 칠하기 규칙: d ≤ r 이면 덮임, r − d < 테두리폭 이면 원의 테두리, 보로노이 경계 픽셀은 노란 선
+const FIELDS = {};
+async function decodeField(f) {
+  const bin = Uint8Array.from(atob(f.b64), c => c.charCodeAt(0));
+  const buf = new Uint8Array(await new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream("deflate"))).arrayBuffer());
+  const n = f.w * f.h, delta = new Int16Array(buf.buffer, 0, n), dist = new Uint16Array(n);
+  for (let y = 0, i = 0; y < f.h; y++) { let acc = 0; for (let x = 0; x < f.w; x++, i++) { acc += delta[i]; dist[i] = acc; } }
+  const cv = document.createElement("canvas"); cv.width = f.w; cv.height = f.h;
+  const cx = cv.getContext("2d"), img = cx.createImageData(f.w, f.h);
+  return { w: f.w, h: f.h, x0: f.x0, y0: f.y0, dx: f.dx, dy: f.dy, dist, flags: buf.subarray(2 * n, 3 * n), cv, cx, img, u32: new Uint32Array(img.data.buffer), key: "" };
+}
+function rgba(str) {
+  const c = document.createElement("canvas").getContext("2d"); c.fillStyle = str; c.fillRect(0, 0, 1, 1);
+  const d = c.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2], d[3] / 255];
+}
+let PAL = null;
+function palette() {
+  const cov = rgba(COL.cover), rim = rgba(COL.amber), ed = rgba(COL.edge);
+  const mix = (a, b) => [0, 1, 2].map(i => Math.round(a[i] * (1 - b[3]) + b[i] * b[3]));
+  const u = c => (255 << 24 | c[2] << 16 | c[1] << 8 | c[0]) >>> 0;
+  PAL = { cover: u(cov), rim: u(rim), edge: u(mix(cov, ed)) };
+}
+function paint(F, r, rimKm) {
+  const key = r.toFixed(4) + "|" + rimKm.toFixed(4);
+  if (F.key === key) return;
+  F.key = key;
+  const R10 = r * 100, W10 = rimKm * 100, { dist, flags, u32 } = F, n = F.w * F.h;
+  for (let i = 0; i < n; i++) {
+    const fl = flags[i], d = dist[i];
+    u32[i] = !(fl & 1) || d > R10 ? 0 : R10 - d < W10 ? PAL.rim : fl & 2 ? PAL.edge : PAL.cover;
+  }
+  F.cx.putImageData(F.img, 0, 0);
+}
+
+// 카메라: 반지름 0.35 km 까지 서울 확대, 2.2 km 에서 전국. 사이는 기하급수로 줌아웃
+function camera(view, r) {
+  const fit = Math.min(view.w / (maxX - minX + 20), view.h / (maxY - minY + 20));
+  const full = view.w / fit;
+  let vw;
+  if (r <= 0.35) vw = Math.max(6, 70 * r);
+  else if (r >= 2.2) vw = full;
+  else vw = 24.5 * Math.pow(full / 24.5, Math.log(r / 0.35) / Math.log(2.2 / 0.35));
+  const s = Math.max(fit, view.w / vw), sMax = view.w / 6;
+  const t = Math.max(0, Math.log(s / fit) / Math.log(sMax / fit));
+  const cx0 = (minX + maxX) / 2, cy0 = (minY + maxY) / 2, e = Math.min(1, t * 3);
+  return { s, cx: cx0 + (K.seoul[0] - cx0) * e, cy: cy0 + (K.seoul[1] - cy0) * e, t };
+}
+
+// ── 배경지도: Esri World Dark Gray Base 타일 · 지명은 통계청 행정구역 이름으로 직접 씀 ──
+// 타일은 웹 메르카토르, 이 지도는 등거리 원통이라 타일마다 네 모서리 경위도로 위치를 잡아 붙인다
+const tiles = new Map();
+function tileImg(kind, z, x, y, hi) {
+  const key = kind + z + "/" + x + "/" + y + hi;
+  let t = tiles.get(key);
+  if (!t) {
+    t = new Image(); t.crossOrigin = "anonymous";
+    t.onload = () => { t.ok = true; request(); };
+    t.src = `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/${z}/${y}/${x}`;
+    tiles.set(key, t);
+  }
+  return t.ok ? t : null;
+}
+const t2lon = (x, z) => x / 2 ** z * 360 - 180;
+const t2lat = (y, z) => Math.atan(Math.sinh(Math.PI * (1 - 2 * y / 2 ** z))) * 180 / Math.PI;
+const lon2t = (lon, z) => Math.floor((lon + 180) / 360 * 2 ** z);
+const lat2t = (lat, z) => { const r = lat * Math.PI / 180; return Math.floor((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * 2 ** z); };
+function drawTiles(view, cam, b, kind, alpha) {
+  const { ctx, dpr } = view;
+  const latC = K.lat1 - cam.cy / K.kmy;
+  const z = Math.max(5, Math.min(16, Math.round(Math.log2(156.543 * Math.cos(latC * Math.PI / 180) * cam.s * dpr))));
+  const hi = false;
+  const lon0 = K.lon0 + b.x0 / K.kmx, lon1 = K.lon0 + b.x1 / K.kmx, lat0 = K.lat1 - b.y1 / K.kmy, lat1 = K.lat1 - b.y0 / K.kmy;
+  const tx0 = lon2t(lon0, z), tx1 = lon2t(lon1, z), ty0 = lat2t(lat1, z), ty1 = lat2t(lat0, z);
+  if ((tx1 - tx0 + 1) * (ty1 - ty0 + 1) > 400) return;
+  ctx.save(); ctx.globalAlpha = alpha; ctx.imageSmoothingEnabled = true;
+  for (let x = tx0; x <= tx1; x++) for (let y = ty0; y <= ty1; y++) {
+    const im = tileImg(kind, z, x, y, hi); if (!im) continue;
+    const X0 = (t2lon(x, z) - K.lon0) * K.kmx, X1 = (t2lon(x + 1, z) - K.lon0) * K.kmx;
+    const Y0 = (K.lat1 - t2lat(y, z)) * K.kmy, Y1 = (K.lat1 - t2lat(y + 1, z)) * K.kmy;
+    ctx.drawImage(im, X0, Y0, X1 - X0 + 0.2 / cam.s, Y1 - Y0 + 0.2 / cam.s);   // 타일 사이 실금 방지
+  }
+  ctx.restore();
+}
+
+function begin(view, cam) {
+  const { ctx, lctx, w, h, dpr } = view, s = cam.s;
+  const T = [dpr * s, 0, 0, dpr * s, dpr * (w / 2 - cam.cx * s), dpr * (h / 2 - cam.cy * s)];
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = COL.bg; ctx.fillRect(0, 0, w, h);
+  ctx.setTransform(...T);
+  const b = { x0: cam.cx - w / 2 / s, x1: cam.cx + w / 2 / s, y0: cam.cy - h / 2 / s, y1: cam.cy + h / 2 / s };
+  ctx.fillStyle = COL.land; ctx.fill(landPaths(view, cam, b).land, "evenodd");
+  drawTiles(view, cam, b, "base", 0.55);   // 어둡게 깔아 바다·주변국이 뜨지 않게
+  lctx.setTransform(1, 0, 0, 1, 0, 0); lctx.clearRect(0, 0, view.layer.width, view.layer.height);
+  lctx.setTransform(...T);
+  view.needMask = false;
+  return b;
+}
+// 원 레이어를 반투명으로 얹는다. 벡터로 그렸을 때만 바다를 지움 (거리장에는 육지 표시가 들어 있음)
+function compose(view, cam, b) {
+  const { ctx, lctx } = view;
+  if (view.needMask) { lctx.save(); lctx.globalCompositeOperation = "destination-out"; lctx.fill(landPaths(view, cam, b).sea, "evenodd"); lctx.restore(); }
+  const T = ctx.getTransform();
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 0.8; ctx.drawImage(view.layer, 0, 0); ctx.globalAlpha = 1;
+  ctx.setTransform(T);
+}
+
+// 같은 시점·같은 내용이면 이전 그림을 다시 쓰는 보조 캔버스
+function cached(view, name, key, draw) {
+  const c = view[name] || (view[name] = { cv: document.createElement("canvas"), key: "" });
+  if (c.cv.width !== view.layer.width || c.cv.height !== view.layer.height) { c.cv.width = view.layer.width; c.cv.height = view.layer.height; c.key = ""; }
+  if (c.key !== key) { const x = c.cv.getContext("2d"); x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, c.cv.width, c.cv.height); draw(x); c.key = key; }
+  const T = view.ctx.getTransform();
+  view.ctx.setTransform(1, 0, 0, 1, 0, 0); view.ctx.drawImage(c.cv, 0, 0); view.ctx.setTransform(T);
+}
+const camKey = (view, cam) => cam.s.toFixed(5) + "|" + cam.cx.toFixed(4) + "|" + cam.cy.toFixed(4) + "|" + view.w + "x" + view.h;
+
+// 지명: 확대 정도에 따라 시도 → 시군구 → 읍면동. 큰 곳부터 놓고 겹치면 건너뜀
+const LB = ["sido", "sgg", "emd"].map(k => K.labels[k].slice().sort((a, b) => b[3] - a[3]));
+const LV = [
+  { max: 4.5, min: 0, font: "700 15px", col: "fg" },
+  { max: 90, min: 1.6, font: "600 13px", col: "fg" },
+  { max: 1e9, min: 28, font: "500 12px", col: "muted", pad: 44 },
+];
+const TW = new Map();
+function drawLabels(view, cam) {
+  cached(view, "lbC", camKey(view, cam), ctx => {
+    const { w, h, dpr } = view, s = cam.s;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineJoin = "round";
+    const grid = new Map(), G = 80;
+    const hit = r => {
+      for (let gx = Math.floor(r[0] / G); gx <= Math.floor(r[2] / G); gx++) for (let gy = Math.floor(r[1] / G); gy <= Math.floor(r[3] / G); gy++) {
+        const L = grid.get(gx * 4096 + gy); if (L && L.some(q => r[0] < q[2] && r[2] > q[0] && r[1] < q[3] && r[3] > q[1])) return true;
+      }
+      return false;
+    };
+    const put = r => {
+      for (let gx = Math.floor(r[0] / G); gx <= Math.floor(r[2] / G); gx++) for (let gy = Math.floor(r[1] / G); gy <= Math.floor(r[3] / G); gy++) {
+        const k = gx * 4096 + gy; (grid.get(k) || grid.set(k, []).get(k)).push(r);
+      }
+    };
+    const fam = css("--font-kr");
+    LB.forEach((list, li) => {
+      const L = LV[li]; if (s > L.max || s < L.min) return;
+      ctx.font = `${L.font} ${fam}`;
+      for (const [name, x, y] of list) {
+        const sx = w / 2 + (x - cam.cx) * s, sy = h / 2 + (y - cam.cy) * s;
+        if (sx < -40 || sx > w + 40 || sy < -20 || sy > h + 20) continue;
+        const k = li + name; let tw0 = TW.get(k); if (tw0 === undefined) { tw0 = ctx.measureText(name).width; TW.set(k, tw0); }
+        const tw = tw0 + (L.pad || 8), th = li === 0 ? 20 : L.pad ? 26 : 17;
+        const r = [sx - tw / 2 + 2048, sy - th / 2 + 2048, sx + tw / 2 + 2048, sy + th / 2 + 2048];
+        if (hit(r)) continue;
+        put(r);
+        ctx.lineWidth = 3.5; ctx.strokeStyle = COL.bg; ctx.globalAlpha = 0.85; ctx.strokeText(name, sx, sy);
+        ctx.globalAlpha = li === 2 ? 0.9 : 0.95; ctx.fillStyle = COL[L.col]; ctx.fillText(name, sx, sy);
+      }
+    });
+  });
+}
+function drawRaster(view, F) {
+  const { lctx } = view; view.needMask = false;
+  lctx.imageSmoothingEnabled = true;
+  lctx.drawImage(F.cv, F.x0, F.y0, F.w * F.dx, F.h * F.dy);
+}
+// 화면 거리장: 보이는 편의점마다 원 안 픽셀에 "가장 가까운 점포까지 거리²"와 그 점포 번호를 적는다.
+// 그 뒤 전국 거리장과 같은 규칙으로 칠함 — 덮임 · 테두리 · 보로노이 경계(이웃 픽셀의 점포 번호가 다름)
+function splatField(view, cam, r, b, rimPx) {
+  const W = view.layer.width, H = view.layer.height, n = W * H, k = cam.s * view.dpr;
+  const ox = view.w / 2 * view.dpr - cam.cx * k, oy = view.h / 2 * view.dpr - cam.cy * k;
+  if (!view.sd || view.sd.length !== n) {
+    view.sd = new Float32Array(n); view.sid = new Int32Array(n);
+    view.img = view.lctx.createImageData(W, H); view.u32 = new Uint32Array(view.img.data.buffer);
+  }
+  const sd = view.sd, sid = view.sid, u32 = view.u32;
+  sd.fill(Infinity); sid.fill(-1);
+  const R = r * k;
+  // 픽셀의 가장 가까운 점포는 그 점포의 칸 안에 있다 → 원을 칸을 감싸는 반지름까지만 칠해도 결과가 같다
+  for (let i = 0; i < N; i++) {
+    const x = X[i], y = Y[i];
+    if (x + r < b.x0 || x - r > b.x1 || y + r < b.y0 || y - r > b.y1) continue;
+    const Ri = RHO ? Math.min(R, RHO[i] * k + 1.5) : R, R2 = Ri * Ri;
+    const cx = x * k + ox, cy = y * k + oy;
+    const ya = Math.max(0, Math.ceil(cy - Ri)), yb = Math.min(H - 1, Math.floor(cy + Ri));
+    for (let py = ya; py <= yb; py++) {
+      const dy = py - cy, span = Math.sqrt(Math.max(0, R2 - dy * dy));
+      const xa = Math.max(0, Math.ceil(cx - span)), xb = Math.min(W - 1, Math.floor(cx + span)), row = py * W;
+      const dy2 = dy * dy;
+      for (let px = xa; px <= xb; px++) {
+        const dx = px - cx, d2 = dx * dx + dy2, j = row + px;
+        if (d2 < sd[j]) { sd[j] = d2; sid[j] = i; }
+      }
+    }
+  }
+  const showEdge = r * cam.s > 2;
+  for (let j = 0; j < n; j++) {
+    const id = sid[j];
+    if (id < 0) { u32[j] = 0; continue; }
+    if (R - Math.sqrt(sd[j]) < rimPx) u32[j] = PAL.rim;
+    else if (showEdge && ((j % W < W - 1 && sid[j + 1] !== id) || (j + W < n && sid[j + W] !== id))) u32[j] = PAL.edge;
+    else u32[j] = PAL.cover;
+  }
+  view.lctx.putImageData(view.img, 0, 0);
+}
+function drawVector(view, cam, r, b, opts = {}) {
+  const ctx = view.lctx, s = cam.s;
+  if (r * s <= 0.3) return;
+  view.needMask = true;
+  // 일할 픽셀 수 어림: 보이는 점포 수 × 원 넓이. 감당할 만하면 화면 거리장
+  const k = s * view.dpr, R = r * k;
+  let work = 0;
+  for (let i = 0; i < N; i++) {
+    const x = X[i], y = Y[i];
+    if (x + r < b.x0 || x - r > b.x1 || y + r < b.y0 || y - r > b.y1) continue;
+    const Ri = RHO ? Math.min(R, RHO[i] * k + 1.5) : R; work += Math.PI * (Ri + 1) * (Ri + 1);
+  }
+  if (work < 40e6) { splatField(view, cam, r, b, (opts.rim || 1.4) * view.dpr); return; }
+  ensureVoronoi(); if (!CS) return;
+  const w = (opts.rim || 1.4) / s;
+  ctx.fillStyle = COL.amber; ctx.fill(unionPaths(r + w, s, b.x0, b.y0, b.x1, b.y1).fill);
+  ctx.fillStyle = COL.cover; ctx.fill(unionPaths(r, s, b.x0, b.y0, b.x1, b.y1).fill);
+  if (E && r * s > 2) { ctx.lineWidth = (opts.edge || 0.7) / s; ctx.strokeStyle = COL.edge; ctx.stroke(edgesPath(r, b.x0, b.y0, b.x1, b.y1)); }
+}
+const DOTC = [];
+function drawDots(view, cam, b, size) {
+  cached(view, "dotC", camKey(view, cam) + "|" + size + "|" + st.k + "|" + st.b, ctx => {
+    const W = view.layer.width, H = view.layer.height, k = cam.s * view.dpr;
+    const ox = view.w / 2 * view.dpr - cam.cx * k, oy = view.h / 2 * view.dpr - cam.cy * k;
+    if (!DOTC.length) for (const c of [COL.dot, COL.gs, COL.cu, COL.se, COL.e24]) { const q = rgba(c); DOTC.push((255 << 24 | q[2] << 16 | q[1] << 8 | q[0]) >>> 0); }
+    const img = ctx.createImageData(W, H), u = new Uint32Array(img.data.buffer);
+    const d = Math.max(1, Math.round(size * view.dpr)), h = d >> 1;
+    for (const code of [0, 3, 4, 1, 2]) {      // 그 밖 → 세븐일레븐 → 이마트24 → GS25 → CU 순서로 위에 쌓음
+      const col = DOTC[code];
+      for (let i = 0; i < N; i++) {
+        if (BR[i] !== code) continue;
+        const px = Math.round(X[i] * k + ox) - h, py = Math.round(Y[i] * k + oy) - h;
+        if (px + d < 0 || px >= W || py + d < 0 || py >= H) continue;
+        for (let yy = Math.max(0, py); yy < Math.min(H, py + d); yy++) { const row = yy * W; for (let xx = Math.max(0, px); xx < Math.min(W, px + d); xx++) u[row + xx] = col; }
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    if (st.k === "south") {
+      const s = cam.s, dpr = view.dpr;
+      ctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * (view.w / 2 - cam.cx * s), dpr * (view.h / 2 - cam.cy * s));
+      ctx.lineWidth = 1.2 / s; ctx.setLineDash([4 / s, 3 / s]); ctx.strokeStyle = COL.muted; ctx.stroke(SLL); ctx.setLineDash([]);
+    }
+  });
+}
+
+function drawMain(r) {
+  const cam = st.cam ? { ...st.cam, t: -1 } : camera(M, r), b = begin(M, cam), F = needField("nat");
+  // 전국 거리장 한 칸이 화면 1.3 px 이하면 래스터: 반지름과 상관없이 픽셀 수만큼만 일함. 더 확대하면 벡터
+  if (st.b === "all" && cam.s <= 1.3 / KF.nat.dx) { if (F) { paint(F, r, Math.max(1.4 / cam.s, F.dx * 1.6)); drawRaster(M, F); } }
+  else drawVector(M, cam, r, b);
+  compose(M, cam, b);
+  drawDots(M, cam, b, Math.max(1.3, Math.min(4, cam.s * 0.08)));   // 확대할수록 점을 키워 브랜드 색이 보이게
+  drawAnswer(M, cam, r, false);
+  drawPick(M, cam);
+  drawLabels(M, cam);
+  lastCam = cam;
+  return cam;
+}
+let lastCam = null;
+// 누른 자리 → 가장 가까운 편의점 선
+function drawPick(view, cam) {
+  const pk = st.pick; if (!pk) return;
+  const { ctx } = view, s = cam.s, i = pk.i;
+  ctx.save();
+  if (!pk.onDot) {
+    ctx.strokeStyle = COL.fg; ctx.lineWidth = 1.6 / s; ctx.setLineDash([5 / s, 4 / s]);
+    ctx.beginPath(); ctx.moveTo(pk.wx, pk.wy); ctx.lineTo(X[i], Y[i]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = COL.fg; ctx.beginPath(); ctx.arc(pk.wx, pk.wy, 4 / s, 0, 2 * Math.PI); ctx.fill();
+  }
+  ctx.strokeStyle = COL.fg; ctx.lineWidth = 2 / s; ctx.beginPath(); ctx.arc(X[i], Y[i], 9 / s, 0, 2 * Math.PI); ctx.stroke();
+  ctx.restore();
+}
+
+// ── 지도 끌기 · 확대 ──
+function fitScale(view) { return Math.min(view.w / (maxX - minX + 20), view.h / (maxY - minY + 20)); }
+function curCam() { if (st.cam) return st.cam; const c = camera(M, st.r); return { s: c.s, cx: c.cx, cy: c.cy }; }
+function setCam(c) {
+  const fit = fitScale(M);
+  c.s = Math.max(fit * 0.8, Math.min(M.w / 1.2, c.s));
+  c.cx = Math.max(minX - 50, Math.min(maxX + 50, c.cx)); c.cy = Math.max(minY - 50, Math.min(maxY + 50, c.cy));
+  st.cam = c; $("recenter").hidden = false; request();
+}
+function zoomAt(px, py, f) {
+  const c = curCam(), wx = c.cx + (px - M.w / 2) / c.s, wy = c.cy + (py - M.h / 2) / c.s;
+  const s2 = Math.max(fitScale(M) * 0.8, Math.min(M.w / 1.2, c.s * f));
+  setCam({ s: s2, cx: wx - (px - M.w / 2) / s2, cy: wy - (py - M.h / 2) / s2 });
+}
+function nearestName(cam) {
+  if (cam.s < fitScale(M) * 1.3) return "전국";
+  const list = cam.s < 4 ? K.labels.sido : K.labels.sgg;
+  let best = null, bd = 1e18;
+  for (const L of list) { const d = (L[1] - cam.cx) ** 2 + (L[2] - cam.cy) ** 2; if (d < bd) { bd = d; best = L[0]; } }
+  return best || "";
+}
+(() => {
+  const cv = $("cv"), ptrs = new Map(); let last = null, down = null, moved = false, multi = false;
+  const pos = e => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  cv.addEventListener("pointerdown", e => {
+    cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, pos(e)); last = null; cv.classList.add("dragging");
+    if (ptrs.size === 1) { down = pos(e); moved = false; multi = false; } else multi = true;
+  });
+  cv.addEventListener("pointermove", e => {
+    if (!ptrs.has(e.pointerId)) { if (e.pointerType === "mouse") hover(pos(e)); return; }
+    $("tip").hidden = true;
+    const p = pos(e), prev = ptrs.get(e.pointerId); ptrs.set(e.pointerId, p);
+    if (!moved && down && Math.hypot(p.x - down.x, p.y - down.y) < 5 && ptrs.size === 1) return;   // 5 px 안쪽은 누르기
+    moved = true;
+    if (ptrs.size === 1) { const c = curCam(); setCam({ s: c.s, cx: c.cx - (p.x - prev.x) / c.s, cy: c.cy - (p.y - prev.y) / c.s }); }
+    else if (ptrs.size === 2) {
+      const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y), mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      if (last) { const c = curCam(); setCam({ s: c.s, cx: c.cx - (mid.x - last.mid.x) / c.s, cy: c.cy - (mid.y - last.mid.y) / c.s }); zoomAt(mid.x, mid.y, d / last.d); }
+      last = { d, mid };
+    }
+  });
+  const up = e => {
+    const wasClick = e.type === "pointerup" && ptrs.size === 1 && !moved && !multi;
+    ptrs.delete(e.pointerId); last = null; if (!ptrs.size) cv.classList.remove("dragging");
+    if (wasClick) pick(pos(e));
+  };
+  cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+  cv.addEventListener("pointerleave", () => hover(null));
+  cv.addEventListener("wheel", e => { e.preventDefault(); const p = pos(e); zoomAt(p.x, p.y, Math.exp(-e.deltaY * 0.0016)); }, { passive: false });
+  cv.addEventListener("dblclick", e => { const p = pos(e); zoomAt(p.x, p.y, 2); });
+  $("recenter").addEventListener("click", () => { st.cam = null; $("recenter").hidden = true; request(); });
+})();
+
+// 누르기: 점 위면 그 자리 편의점들, 빈 곳이면 가장 가까운 편의점과 직선거리
+const BRNAME = ["편의점", "GS25", "CU", "세븐일레븐", "이마트24"], BRCOL = ["dot", "gs", "cu", "se", "e24"];
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function nearestAt(p) {
+  if (!M) return null;
+  const c0 = st.cam || camera(M, st.r), cam = { s: c0.s, cx: c0.cx, cy: c0.cy };   // 지금 시점 (그리기 전이어도 같음)
+  const wx = cam.cx + (p.x - M.w / 2) / cam.s, wy = cam.cy + (p.y - M.h / 2) / cam.s;
+  let bi = -1, bk = 1e18;
+  for (let i = 0; i < N; i++) { const dx = (X[i] - wx) / FX[i], dy = Y[i] - wy, d = dx * dx + dy * dy; if (d < bk) { bk = d; bi = i; } }
+  if (bi < 0) return null;
+  const g = curSet.UI ? curSet.UI[bi] : bi, code = BCODE[st.b];
+  return { wx, wy, i: bi, km: Math.sqrt(bk), onDot: Math.hypot(X[bi] - wx, Y[bi] - wy) * cam.s <= 12,
+           list: () => storesAt(g).filter(o => code < 0 || o.b === code) };
+}
+// 마우스를 점 위에 올리면 이름표
+let hoverQ = null;
+function hover(p) {
+  if (!p) { $("tip").hidden = true; $("cv").classList.remove("over"); return; }
+  if (hoverQ) { hoverQ = p; return; }
+  hoverQ = p;
+  requestAnimationFrame(() => {
+    const q = hoverQ; hoverQ = null;
+    const n = nearestAt(q), tip = $("tip");
+    if (!n || !n.onDot) { tip.hidden = true; $("cv").classList.remove("over"); return; }
+    const list = n.list(), o = list[0]; if (!o) { tip.hidden = true; return; }
+    tip.innerHTML = `<i style="background:${COL[BRCOL[o.b]]}"></i>${esc(o.name)}` + (list.length > 1 ? `<span>외 ${list.length - 1}곳</span>` : "");
+    tip.hidden = false; $("cv").classList.add("over");
+    const W = tip.offsetWidth;
+    tip.style.left = Math.max(6, Math.min(M.w - W - 6, q.x + 12)) + "px";
+    tip.style.top = Math.max(6, q.y - 34) + "px";
+  });
+}
+function pick(p) {
+  const n = nearestAt(p); if (!n) return;
+  $("tip").hidden = true;
+  const { wx, wy, i: bi, onDot } = n, bk = n.km * n.km;
+  const list = n.list();
+  const items = list.slice(0, 6).map(o => `<li><i style="background:${COL[BRCOL[o.b]]}"></i><div>${esc(o.name)}<span>${esc(o.dong)}</span></div></li>`).join("")
+    + (list.length > 6 ? `<li><i></i><div><span>외 ${list.length - 6}곳</span></div></li>` : "");
+  const km = Math.sqrt(bk);
+  const head = onDot ? (list.length > 1 ? `이 자리 편의점 ${list.length}곳` : "이 자리 편의점")
+    : `여기서 가장 가까운 ${st.b === "all" ? "편의점" : SET().label}`;
+  const el = $("pop");
+  el.innerHTML = `<button type="button" class="x" aria-label="닫기">×</button><p class="h">${head}</p><ul>${items}</ul>`
+    + (onDot ? "" : `<div class="d">${km < 1 ? Math.round(km * 1000) + " m" : km.toFixed(2) + " km"}<small>직선거리</small></div>`);
+  el.hidden = false;
+  const W = el.offsetWidth, H = el.offsetHeight;
+  el.style.left = Math.max(8, Math.min(M.w - W - 8, p.x + 14)) + "px";
+  el.style.top = Math.max(8, Math.min(M.h - H - 8, p.y + 14)) + "px";
+  el.querySelector(".x").addEventListener("click", () => { el.hidden = true; st.pick = null; request(); });
+  st.pick = { wx, wy, i: bi, onDot }; request();
+}
+
+function drawAnswer(view, cam, r, big) {
+  const res = RES();
+  if (r < res.r * 0.999) return;
+  const { ctx } = view; const s = cam.s; const [px, py] = res.xy;
+  const fx = K.kx / Math.cos(res.lat * Math.PI / 180);
+  ctx.save();
+  ctx.lineWidth = 1.6 / s; ctx.strokeStyle = COL.fg; ctx.setLineDash([5 / s, 4 / s]);
+  ctx.beginPath(); ctx.ellipse(px, py, res.r * fx, res.r, 0, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+  ctx.lineWidth = 1.2 / s; ctx.strokeStyle = COL.fg;
+  for (const so of res.stores.slice(0, res.kind === "vertex" ? 3 : 1)) { ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(so.xy[0], so.xy[1]); ctx.stroke(); }
+  ctx.fillStyle = COL.fg; ctx.beginPath(); ctx.arc(px, py, (big ? 6 : 4.5) / s, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = COL.bg; ctx.beginPath(); ctx.arc(px, py, (big ? 2.5 : 2) / s, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+// 확대 화면: 결정적인 세 점포의 원과 교차점
+function circleIntersections(a, b, r) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy);
+  if (l > 2 * r || l === 0) return [];
+  const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, h = Math.sqrt(r * r - l * l / 4);
+  const nx = -dy / l, ny = dx / l;
+  return [[mx + h * nx, my + h * ny], [mx - h * nx, my - h * ny]];
+}
+let zoomVisible = false, zoomKey = "";
+function drawZoom(r) {
+  const res = RES(), F = needField(st.b + "_" + st.k);
+  const v = Z, rr = Math.min(r, res.r);
+  const zk = st.b + "|" + st.k + "|" + rr.toFixed(4) + "|" + (r >= res.r * 0.999) + "|" + v.w + "x" + v.h + "|" + !!F + "|" + tiles.size;
+  if (!zoomVisible || zk === zoomKey) return;
+  zoomKey = zk;
+  const s = v.h / (res.r * 3.1);
+  const cam = { s, cx: res.xy[0], cy: res.xy[1] };
+  const b = begin(v, cam);
+  if (F) { paint(F, rr, Math.max(1.6 / s, F.dx * 1.5)); drawRaster(v, F); }
+  compose(v, cam, b);
+  drawDots(v, cam, b, 3);
+  const { ctx } = v;
+  const fx = K.kx / Math.cos(res.lat * Math.PI / 180);
+  const keys = res.stores.slice(0, res.kind === "vertex" ? 3 : 1);
+  ctx.save();
+  ctx.lineWidth = 2 / s; ctx.strokeStyle = COL.fg;
+  keys.forEach(so => { ctx.beginPath(); ctx.ellipse(so.xy[0], so.xy[1], rr * fx, rr, 0, 0, Math.PI * 2); ctx.stroke(); });
+  // 교차점: 동서를 fx 로 나눠 원으로 만든 뒤 공식 적용
+  const q = keys.map(so => [so.xy[0] / fx, so.xy[1]]);
+  ctx.fillStyle = COL.fg;
+  for (let i = 0; i < q.length; i++) for (let j = i + 1; j < q.length; j++)
+    for (const p of circleIntersections(q[i], q[j], rr)) { ctx.beginPath(); ctx.arc(p[0] * fx, p[1], 3.4 / s, 0, Math.PI * 2); ctx.fill(); }
+  keys.forEach(so => { ctx.fillStyle = COL.amber; ctx.beginPath(); ctx.arc(so.xy[0], so.xy[1], 5 / s, 0, Math.PI * 2); ctx.fill(); });
+  ctx.restore();
+  drawAnswer(v, cam, r, true);
+  drawLabels(v, cam);
+  ctx.save(); ctx.setTransform(v.dpr, 0, 0, v.dpr, 0, 0);
+  ctx.font = `700 14px ${css("--font-num")}`; ctx.fillStyle = COL.amber;
+  keys.forEach((so, i) => {
+    const sx = v.w / 2 + (so.xy[0] - cam.cx) * s, sy = v.h / 2 + (so.xy[1] - cam.cy) * s;
+    ctx.fillText(String(i + 1), sx + 8, sy - 8);
+  });
+  ctx.font = `500 13px ${css("--font-kr")}`; ctx.fillStyle = COL.muted;
+  ctx.fillText(`r = ${rr.toFixed(2)} km`, 12, 22);
+  ctx.restore();
+}
+
+// ── 그리기 ──
+let pending = false;
+function request() { if (!pending) { pending = true; requestAnimationFrame(render); } }
+function render() {
+  pending = false;
+  const r = st.r;
+  const cam = drawMain(r);
+  drawZoom(r);
+  const res = RES();
+  $("rv").textContent = r < 1 ? r.toFixed(2) : r < 10 ? r.toFixed(1) : r.toFixed(r < 100 ? 1 : 0);
+  const cov = interp(CR, SET().cov[st.k], r);
+  $("cov").textContent = (cov * 100 >= 99.95 && r < res.r ? 99.9 : cov * 100).toFixed(1) + "%";
+  const pairs = Math.max(0, interp(CR, SET().pairs, r));
+  $("pairs").textContent = fmt(pairs); $("pairs2").textContent = fmt(pairs); $("pts2").textContent = fmt(pairs * 2);
+  $("maptag").textContent = nearestName(cam);
+  drawChart(r);
+}
+
+// ── 덮인 비율 그래프 ──
+function drawChart(r) {
+  const W = 640, H = 200, L = 40, R = 12, T = 12, B = 30;
+  const lx = v => L + (Math.log10(v) + 1) / 3 * (W - L - R);   // 0.1 ~ 100 km
+  const ly = v => T + (1 - v) * (H - T - B);
+  const ys = SET().cov[st.k];
+  let d = "";
+  CR.forEach((x, i) => { if (x >= 0.1 && x <= 100) d += (d ? "L" : "M") + lx(x).toFixed(1) + " " + ly(ys[i]).toFixed(1); });
+  const cr = Math.min(Math.max(r, 0.1), 100), cv = interp(CR, ys, cr);
+  const grid = [0, 0.5, 1].map(v => `<line x1="${L}" x2="${W - R}" y1="${ly(v)}" y2="${ly(v)}" stroke="${COL.muted}" stroke-opacity="0.25"/><text x="${L - 8}" y="${ly(v) + 4}" text-anchor="end">${v * 100}%</text>`).join("");
+  const ticks = [0.1, 1, 10, 100].map(v => `<text x="${lx(v)}" y="${H - 8}" text-anchor="middle">${v} km</text>`).join("");
+  $("chart").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="반지름에 따른 덮인 비율">${grid}${ticks}
+    <path d="${d} L${lx(100)} ${ly(0)} L${lx(0.1)} ${ly(0)} Z" fill="${COL.amber}" fill-opacity="0.10"/>
+    <path d="${d}" fill="none" stroke="${COL.amber}" stroke-width="2.2"/>
+    <line x1="${lx(cr)}" x2="${lx(cr)}" y1="${T}" y2="${H - B}" stroke="${COL.fg}" stroke-opacity="0.35" stroke-dasharray="3 3"/>
+    <circle cx="${lx(cr)}" cy="${ly(cv)}" r="5" fill="${COL.fg}"/></svg>`;
+}
+
+// ── 결과 글 ──
+function setRegion(k) {
+  st.k = k;
+  document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.k === k ? "true" : "false"));
+  const res = RES(), S = SET();
+  $("place").textContent = res.place;
+  $("placeNote").textContent = res.note + (k === "all" && st.b === "all" ? ` · 독도는 ${K.dokdo.toFixed(1)} km` : "");
+  $("ansSet").textContent = st.b === "all" ? "전체 편의점" : S.label + "만";
+  $("nv").textContent = fmt(S.n); $("nlabel").textContent = st.b === "all" ? "편의점" : S.label;
+  $("nv2").textContent = fmt(S.nTri);
+  $("rstar").textContent = res.r.toFixed(2) + " km";
+  $("coord").textContent = `${res.lat.toFixed(5)}°N  ${res.lon.toFixed(5)}°E`;
+  $("stores").innerHTML = res.stores.map((so, i) =>
+    `<li><span class="k">${i + 1}</span><span class="nm">${so.name}${so.branch ? " " + so.branch : ""}<span>${so.addr}</span></span><span class="d">${so.d.toFixed(2)} km</span></li>`).join("");
+  const kind = res.kind === "vertex" ? "세 원이 한 점에서 만나는 외심이 답입니다." : "답이 육지 안 외심이 아니라 경계선 위에 있습니다.";
+  $("rstarline").innerHTML = `이 범위의 답 <b>r* = ${res.r.toFixed(2)} km</b>. ${kind}`;
+  $("halfline").innerHTML = `반지름 <b>${S.half[k].toFixed(2)} km</b>면 국토의 절반, 10 km면 <b>${(interp(CR, S.cov[k], 10) * 100).toFixed(1)}%</b>가 덮입니다.`;
+  zoomKey = "";
+  $("slider").value = Math.round(rToSlider(Math.min(st.r, rMax())));
+  st.r = sliderToR(+$("slider").value);
+  request();
+}
+
+// ── 재생 ──
+let raf = 0, t0 = 0, v0 = 0;
+const DUR = 16000;
+function step(t) {
+  if (!st.playing) return;
+  if (!t0) t0 = t;
+  const target = rToSlider(RES().r);
+  const v = Math.min(target, v0 + (t - t0) / DUR * 1000);
+  $("slider").value = v; st.r = sliderToR(v); request();
+  if (v >= target) { st.r = RES().r; stop(); request(); return; }
+  raf = requestAnimationFrame(step);
+}
+function start() {
+  st.playing = true; t0 = 0;
+  v0 = +$("slider").value >= rToSlider(RES().r) - 1 ? 0 : +$("slider").value;
+  $("playTxt").textContent = "멈춤"; $("playIcon").setAttribute("d", "M5 3h4v14H5zM11 3h4v14h-4z");
+  raf = requestAnimationFrame(step);
+}
+function stop() {
+  st.playing = false; cancelAnimationFrame(raf);
+  $("playTxt").textContent = "재생"; $("playIcon").setAttribute("d", "M5 3l12 7-12 7z");
+}
+$("play").addEventListener("click", () => st.playing ? stop() : start());
+$("slider").addEventListener("input", e => {
+  stop(); st.r = sliderToR(+e.target.value);
+  const rs = RES().r; if (Math.abs(st.r - rs) / rs < 0.008) st.r = rs;   // 답 근처는 답에 붙임
+  request();
+});
+document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => { stop(); st.pick = null; $("pop").hidden = true; setRegion(b.dataset.k); }));
+
+// ── 공식 ──
+document.querySelectorAll("[data-tex]").forEach(el => {
+  try { el.innerHTML = katex.renderToString(el.dataset.tex, { output: "mathml", displayMode: true, throwOnError: false }); }
+  catch (e) { el.textContent = el.dataset.tex; }
+});
+for (const [b, S] of Object.entries(K.sets)) $("bc-" + b).textContent = fmt(S.n);
+// 브랜드 고르기
+function setBrand(b) {
+  stop(); st.b = b; st.pick = null; $("pop").hidden = true;
+  document.querySelectorAll(".brands button").forEach(x => x.setAttribute("aria-pressed", x.dataset.b === b ? "true" : "false"));
+  useSet(b); setRegion(st.k);
+}
+document.querySelectorAll(".brands button").forEach(x => x.addEventListener("click", () => setBrand(x.dataset.b)));
+
+function resize() { M = setup($("cv")); Z = setup($("zv")); zoomKey = ""; request(); }
+new IntersectionObserver(es => { zoomVisible = es[0].isIntersecting; if (zoomVisible) request(); }, { rootMargin: "200px" }).observe($("zv"));
+readColors(); palette();
+window.addEventListener("resize", resize);
+// 거리장은 처음 필요할 때 푼다. 푸는 동안은 null → 원 없이 지도만
+const decoding = new Set();
+function needField(key) {
+  if (FIELDS[key] || !KF[key] || decoding.has(key)) return FIELDS[key] || null;
+  decoding.add(key);
+  decodeField(KF[key]).then(f => { FIELDS[key] = f; zoomKey = ""; request(); }).catch(() => {});
+  return null;
+}
+needField("nat");
+setTimeout(ensureVoronoi, 400);   // 확대할 때 쓸 보로노이는 첫 화면 뒤에
+useSet("all");
+resize();
+st.r = 8;
+setRegion("south");
+$("slider").value = Math.round(rToSlider(8)); st.r = sliderToR(+$("slider").value);
+request();
+})();
+</script>

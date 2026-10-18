@@ -1,0 +1,16 @@
+# 원본·내려받는 데이터 (README 의 "데이터 받기" 로 다시 받을 수 있음)
+data/raw/
+data/store.zip
+data/*.json
+data/*.geojson
+data/*.html
+data/*.js
+data/ck.txt
+
+# 중간 산출물 (src 스크립트로 다시 만듦). 완성 페이지는 docs/index.html
+out/
+
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
