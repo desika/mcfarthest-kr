@@ -1,106 +1,112 @@
-# 편의점에서 가장 먼 곳
+# The Farthest Point from a Convenience Store in Korea
 
-대한민국에서 편의점과 가장 멀리 떨어질 수 있는 곳을 찾는 인터랙티브 지도입니다. 미국 맥도날드 버전인 [McFarthest Spot](https://www.datapointed.net/2009/09/distance-to-nearest-mcdonalds/)과 everything.in.math의 시각화에서 착안했습니다.
+How far can you get from a convenience store in South Korea? Not very far.
 
-편의점 54,446곳에 같은 반지름의 원을 그리고 반지름을 키워 갑니다. 원끼리 맞닿는 선은 보로노이 경계가 되고, 마지막까지 덮이지 않고 남는 한 점이 답입니다.
+This project is a Korean take on the **McFarthest Spot**, the point in the contiguous US that is farthest from any McDonald's. [Stephen Von Worley found it in 2009](https://www.datapointed.net/2009/09/distance-to-nearest-mcdonalds/), roughly 107 miles (172 km) from the nearest McDonald's, and everything.in.math later turned the idea into an animation of growing circles. Korea has no McDonald's on every corner. It has something denser: **54,446 convenience stores**, roughly one for every 950 people. So the question becomes: where in Korea is the farthest point from a convenience store?
 
-![전국 화면](docs/img/national.png)
+The interactive map draws a circle of the same radius around every store and grows it. Where two circles meet, a Voronoi boundary appears. The last spot the circles cover is the answer.
 
-## 결과
+![Whole country at a 12 km radius](docs/img/national.png)
 
-직선 대원거리 기준입니다. 데이터는 소상공인시장진흥공단 상가정보 2026년 6월판입니다.
+## How dense is it?
 
-| 기준 | DMZ 밖 본토에서 가장 먼 곳 | 가장 가까운 점포까지 | 섬 포함 |
+Distances are straight-line great-circle distances. Store locations come from the June 2026 release of Korea's Small Enterprise and Market Service commercial-district dataset.
+
+- Half of South Korea's land lies within **2.9 km** of a convenience store.
+- **96.8%** of the land lies within **10 km** of one.
+- On the mainland outside the DMZ, the farthest you can get is **19.83 km**. The spot is in the mountains of Subi-myeon, Uljin, North Gyeongsang. It sits exactly 19.83 km from three stores in Bonghwa, Yeongyang and Uljin, at the circumcenter where their three circles meet.
+- For comparison, the US McFarthest Spot is about 172 km from the nearest McDonald's.
+
+| Stores used | Farthest point, mainland outside the DMZ | Distance | Including islands |
 |---|---|---|---|
-| 전체 편의점 | 경북 울진군 수비면 | 19.83 km | 전남 신안군 가거도 92.79 km |
-| GS25 | 전남 신안군 지도읍 | 24.28 km | 전남 신안군 흑산면 102.16 km |
-| CU | 경북 영양군 수비면 | 22.65 km | 전남 신안군 흑산면 106.15 km |
-| 세븐일레븐 | 강원 홍천군 서석면 | 26.63 km | 경북 울릉군 218.83 km |
-| 이마트24 | 경북 봉화군 재산면 | 36.97 km | 경북 울릉군 219.14 km |
+| All convenience stores | Subi-myeon, Uljin-gun, Gyeongbuk | 19.83 km | Gageodo island, Sinan-gun, 92.79 km |
+| GS25 only | Jido-eup, Sinan-gun, Jeonnam | 24.28 km | Heuksan-myeon, Sinan-gun, 102.16 km |
+| CU only | Subi-myeon, Yeongyang-gun, Gyeongbuk | 22.65 km | Heuksan-myeon, Sinan-gun, 106.15 km |
+| 7-Eleven only | Seoseok-myeon, Hongcheon-gun, Gangwon | 26.63 km | Ulleung-gun, Gyeongbuk, 218.83 km |
+| emart24 only | Jaesan-myeon, Bonghwa-gun, Gyeongbuk | 36.97 km | Ulleung-gun, Gyeongbuk, 219.14 km |
 
-- 전체 편의점 기준으로 국토의 절반은 반지름 2.9 km, 96.8%는 10 km 안에 편의점이 있습니다.
-- 전체 편의점 기준 DMZ 밖 본토의 답은 봉화·영양·울진 편의점 세 곳에서 정확히 같은 거리에 있는 점입니다. 세 원이 한 점에서 만나는 외심입니다.
-- DMZ를 포함하면 경기 연천군 왕징면의 군사분계선 위, 20.17 km입니다.
+If you include the DMZ, the answer moves onto the Military Demarcation Line in Wangjing-myeon, Yeoncheon, at 20.17 km, a place no one can visit.
 
-## 기능
+## Features
 
-- 재생하면 서울에서 반지름 0.1 km로 시작해 전국으로 줌아웃하며 원이 자랍니다.
-- 브랜드를 고르면 그 브랜드 점포만으로 다시 계산한 결과를 봅니다.
-- 범위는 DMZ 밖 본토, DMZ 포함 본토, 섬 포함 세 가지입니다.
-- 지도는 끌기, 휠, 두 손가락, 더블클릭으로 옮기고 확대합니다.
-- 점 위에 마우스를 올리면 편의점 이름, 누르면 이름과 동네가 나옵니다. 빈 곳을 누르면 가장 가까운 편의점과 직선거리가 나옵니다.
-- 정답 확대 화면에서 답을 정하는 원들과 교차점이 외심으로 모이는 모습을 봅니다.
+- **Play** starts at a 0.1 km radius over Seoul and zooms out to the whole country as the circles grow.
+- **Brand filter**: recompute everything with GS25, CU, 7-Eleven or emart24 stores only.
+- **Region**: mainland outside the DMZ, mainland including the DMZ, or the whole country with islands.
+- **Pan and zoom** with drag, mouse wheel, pinch or double-click.
+- **Store names**: hover over a dot to see the store name, click it for the name and neighborhood. Click an empty spot to see the nearest store and its straight-line distance.
+- **Answer view**: watch the deciding circles close in until their intersection points meet at the circumcenter.
+- The on-page text is in Korean.
 
-![GS25만 고르고 점을 누른 화면](docs/img/gs25.png)
+![GS25 only, after clicking a store](docs/img/gs25.png)
 
-## 보기
+## View it
 
-`docs/index.html` 하나에 데이터가 모두 들어 있습니다. 브라우저로 열면 됩니다. 배경지도 타일, 글꼴, 수식·보로노이 라이브러리는 인터넷에서 받습니다.
+`docs/index.html` is a single self-contained file with all the data inside. Open it in a browser. Base map tiles, fonts and two small libraries load from the internet.
 
-## 계산 방법
+## How it is computed
 
-| 단계 | 내용 |
+| Step | Method |
 |---|---|
-| 거리 | 지구를 반지름 6,371.0088 km 구로 봅니다. 점을 단위벡터로 바꿔 KD트리에 넣고, 현의 길이 c에서 d = 2R·asin(c/2)로 대원거리를 얻습니다 |
-| 최원점 | p* = argmax_{p∈L} min_i d(p, s_i). 후보는 두 종류뿐입니다. 육지 안의 보로노이 꼭짓점과, 원이 경계 밖으로 빠지는 경계선 위의 점입니다 |
-| 보로노이 꼭짓점 | 단위구 위 점들의 볼록껍질을 구하면 면 하나가 구면 들로네 삼각형 하나입니다. 면의 바깥 법선이 세 점의 구면 외심입니다. 4만 9천 점에 0.3초 걸립니다 |
-| 경계선 후보 | 해안선과 DMZ 남방한계선을 약 20 m 간격으로 나눈 30만~80만 점을 KD트리로 조회합니다 |
-| 덮인 비율 | 국토를 약 550 m 격자 135만 칸으로 나눠 칸마다 최근접 거리를 구하고, 위도 넓이 가중으로 누적합니다 |
-| 겹친 원 쌍 | 두 원이 만나는 조건은 중심거리 ≤ 2r입니다. 반지름이 크면 전부 세는 데 수십 분이 걸려서, 점포 4천 곳 표본으로 세어 환산합니다 |
+| Distance | Earth as a sphere of radius 6,371.0088 km. Stores become unit vectors in a KD-tree, and a chord length c turns into a great-circle distance d = 2R·asin(c/2) |
+| Farthest point | p* = argmax over land of the distance to the nearest store. Only two kinds of candidates exist: Voronoi vertices on land, and points on the boundary where the empty circle spills over the coast or border |
+| Voronoi vertices | The convex hull of the stores on the unit sphere is the spherical Delaunay triangulation. Each face's outward normal is the spherical circumcenter of its three stores. This takes 0.3 s for 49,000 points |
+| Boundary candidates | The coastline and the DMZ southern limit line, sampled every 20 m, give 300,000 to 840,000 points, each checked with the KD-tree |
+| Coverage | About 1.35 million cells of roughly 550 m, each with its nearest-store distance, accumulated with an area weight by latitude |
+| Overlapping circles | Two circles of radius r overlap when their centers are at most 2r apart. Counting every pair at large radii takes tens of minutes, so a 4,000-store sample is counted and scaled up |
 
-### 화면 그리기
+### Rendering
 
-처음에는 원 수만 개를 캔버스 경로로 그렸는데 한 프레임에 수 초에서 수십 초가 걸렸습니다. 지금은 세 가지 방식을 화면 축척에 따라 고릅니다.
+The first version drew tens of thousands of circles as canvas paths. A single frame took several seconds and the first load took 24 s. The page now picks one of three methods by zoom level.
 
-- **전국 축척**: 파이썬에서 미리 계산한 약 556 m 해상도의 거리장을 씁니다. 픽셀마다 최근접 거리와 보로노이 경계 여부가 들어 있어, 매 프레임 `d ≤ r` 비교만으로 칠합니다.
-- **확대 축척**: 보이는 점포마다 원 안 픽셀에 "최근접 거리²와 점포 번호"를 직접 적는 화면 거리장을 자바스크립트로 만듭니다. 픽셀의 최근접 점포는 그 점포의 보로노이 칸 안에 있으므로, 원은 칸을 감싸는 반지름까지만 칠해도 결과가 같습니다. 그래서 반지름이 커져도 일하는 양이 화면 넓이의 몇 배를 넘지 않습니다.
-- **정답 확대 화면**: 브랜드·범위마다 정확한 대원거리로 미리 계산한 640×512 거리장을 씁니다.
+- **Country scale**: a precomputed distance field at about 556 m resolution. Each pixel stores its nearest-store distance and whether it lies on a Voronoi edge, so a frame only compares `d ≤ r`.
+- **Zoomed in**: a screen-space distance field built in JavaScript. Every visible store writes its squared distance and store index into the pixels of its disk. A pixel's nearest store always lies in that store's Voronoi cell, so each disk only needs to reach the radius of its cell. The work stays at a few times the screen area no matter how large the radius gets.
+- **Answer view**: a 640×512 exact great-circle distance field precomputed for each brand and region.
 
-같은 PC 기준으로 첫 화면은 24초에서 0.7초로, 한 프레임은 최대 1초에서 30~100 ms로 줄었습니다. 실제로 걸리던 곳은 다음과 같았습니다.
+On the same machine, the first screen went from 24 s to 0.7 s and frames from up to 1 s to 30 to 100 ms. The actual bottlenecks were:
 
-- 다각형 4만 9천 개를 넣을 때 매번 부른 `closePath()` 하나가 22초를 썼습니다.
-- 매 프레임 꼭짓점 2만 6천 개짜리 해안선으로 바다를 지웠습니다.
-- 작은 원 수만 개를 GPU 경로로 칠했습니다.
+- A `closePath()` call per polygon across 49,000 polygons cost 22 s.
+- Erasing the sea every frame with a 26,000-vertex coastline path.
+- Filling tens of thousands of small circles as GPU paths.
 
-## 다시 만들기
+## Rebuild
 
-파이썬 3.13, numpy, scipy, shapely가 필요합니다.
+Requires Python 3.13 with numpy, scipy and shapely.
 
 ```sh
-python src/fetch_data.py     # 상가정보 약 350 MB + 행정구역·DMZ 경계 → data/
-python src/extract.py        # 편의점만 → data/stores.csv
-python src/compute.py        # 전체 편의점 전국 거리장 → out/field.bin, out/result.json
-python src/compute_sets.py   # 브랜드별 최원점·덮인 비율·확대 거리장 → out/sets.json, out/sets_fields.js  (약 2분)
-python src/fields.py         # 전국 거리장 포장 → out/fields.js
-python src/build_data.py     # 점포·해안선·지명·결과 → out/page_data.js
-python src/build_page.py     # 한 파일로 → out/mcfarthest-kr.html
+python src/fetch_data.py     # store data (~350 MB) and boundaries → data/
+python src/extract.py        # convenience stores only → data/stores.csv
+python src/compute.py        # country distance field for all stores → out/field.bin, out/result.json
+python src/compute_sets.py   # farthest points, coverage and answer fields per brand (~2 min)
+python src/fields.py         # pack the country field → out/fields.js
+python src/build_data.py     # stores, coastline, place names, results → out/page_data.js
+python src/build_page.py     # one file → out/mcfarthest-kr.html
 cp out/mcfarthest-kr.html docs/index.html
 ```
 
-## 파일
+## Files
 
-| 경로 | 내용 |
+| Path | Contents |
 |---|---|
-| `src/page.html` | 화면 원본. 스타일과 스크립트가 들어 있습니다 |
-| `src/brands.py` | 상호명 → 브랜드. 운영 법인 이름 등록분도 묶습니다 |
-| `src/compute.py`, `src/compute_sets.py` | 최원점과 덮인 비율 계산 |
-| `src/fields.py`, `src/build_data.py`, `src/build_page.py` | 화면용 데이터 묶기 |
-| `data/stores.csv` | 상가정보에서 뽑은 편의점 54,446곳 |
-| `docs/index.html` | 완성 페이지 |
+| `src/page.html` | The page source, styles and scripts |
+| `src/brands.py` | Store name → brand, including stores registered under the operating company's name |
+| `src/compute.py`, `src/compute_sets.py` | Farthest points and coverage |
+| `src/fields.py`, `src/build_data.py`, `src/build_page.py` | Packing data for the page |
+| `data/stores.csv` | The 54,446 convenience stores extracted from the source data |
+| `docs/index.html` | The finished page |
 
-## 한계
+## Limitations
 
-- 상가정보의 업종 분류를 그대로 따랐습니다. 농협 지소처럼 편의점으로 분류된 곳도 들어가고, 등록되지 않은 매장은 빠집니다. 흑산도에는 편의점으로 분류된 매장이 없어서 가거도의 최근접이 진도가 됩니다.
-- 브랜드는 상호명 글자로 나눴습니다. 실제 가맹점 수와 조금 다를 수 있습니다.
-- 행정구역 경계는 2013년 기준이라 그 뒤 생긴 매립지와 바뀐 지명은 반영되지 않았습니다.
-- 확대 화면의 원은 지도 좌표계의 평면 원이라 동서 길이가 최대 3~4% 다를 수 있습니다. 결과 수치와 전국·정답 화면은 정확한 대원거리입니다.
-- 모든 거리는 직선입니다. 길로 가면 훨씬 멉니다.
+- The store list follows the source dataset's business categories. A few non-chain shops classified as convenience stores are included, and unregistered stores are missing. No store on Heuksando island is classified as a convenience store, so Gageodo's nearest store ends up on Jindo.
+- Brands are assigned from store names, so counts may differ slightly from official franchise numbers.
+- Administrative boundaries are from 2013, so newer reclaimed land and renamed districts are not reflected.
+- In zoomed-in views, circles are drawn as plane circles in the map projection, so east–west extents can be off by up to 3 to 4%. The reported results and the country and answer views use exact great-circle distances.
+- All distances are straight lines. By road it is much farther.
 
-## 출처와 라이선스
+## Sources
 
-- 편의점 위치: [소상공인시장진흥공단 상가(상권)정보](https://www.data.go.kr/data/15083033/fileData.do), 공공데이터포털
-- 행정구역 경계: 통계청 2013, [southkorea/southkorea-maps](https://github.com/southkorea/southkorea-maps)
-- DMZ 남방한계선: [Natural Earth](https://www.naturalearthdata.com/) 10m
-- 배경지도: Esri World Dark Gray Base
-- 라이브러리: [d3-delaunay](https://github.com/d3/d3-delaunay), [KaTeX](https://katex.org/)
-- 착안: Stephen Von Worley의 McFarthest Spot, everything.in.math의 McFarthest point 시각화
+- Store locations: [Small Enterprise and Market Service, commercial district data](https://www.data.go.kr/data/15083033/fileData.do), Public Data Portal of Korea
+- Administrative boundaries: Statistics Korea 2013, via [southkorea/southkorea-maps](https://github.com/southkorea/southkorea-maps)
+- DMZ southern limit line: [Natural Earth](https://www.naturalearthdata.com/) 10m
+- Base map: Esri World Dark Gray Base
+- Libraries: [d3-delaunay](https://github.com/d3/d3-delaunay), [KaTeX](https://katex.org/)
+- Inspiration: Stephen Von Worley's McFarthest Spot and the McFarthest point animation by everything.in.math
