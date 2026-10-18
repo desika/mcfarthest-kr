@@ -81,8 +81,17 @@ h2 { font-size: 26px; font-weight: 800; margin: 0 0 14px; letter-spacing: -0.01e
     grid-template-rows: auto minmax(0, 1fr);
     grid-template-areas: "map head" "map panel";
   }
-  .panel { justify-content: flex-end; gap: 18px; }
+  .panel { gap: 16px; overflow-y: auto; min-height: 0; }
+  .panel > :first-child { margin-top: auto; }   /* 남는 공간은 위로, 넘치면 위로 삐져나가지 않고 스크롤 */
   .stage .lede { font-size: 18px; margin-top: 8px; }
+}
+@media (min-width: 900px) and (max-height: 820px) {
+  .stage { padding-block: 14px; }
+  .stage h1 { font-size: 36px; }
+  .stage .lede { font-size: 15px; margin-top: 4px; }
+  .stats .big { font-size: 44px; }
+  .panel { gap: 12px; }
+  .panel .hint { display: none; }
 }
 @media (max-width: 899px) {
   .stage .eyebrow:first-child { display: none; }
