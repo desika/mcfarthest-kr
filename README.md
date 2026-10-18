@@ -2,6 +2,8 @@
 
 How far can you get from a convenience store in South Korea? Not very far.
 
+**[Open the interactive map →](https://desika.github.io/mcfarthest-kr/)**
+
 ![Circles grow from every convenience store until the last empty spot disappears](docs/img/grow.gif)
 
 This is a hobby toy project, built with [Claude](https://claude.com/claude-code).
@@ -83,7 +85,7 @@ The math behind every step is written up in **[docs/MATH.md](docs/MATH.md)**: gr
 
 ## Run it
 
-`docs/index.html` is a single self-contained file with all the data inside. Open it in a browser. Base map tiles, fonts and two small libraries load from the internet.
+Open the [live map](https://desika.github.io/mcfarthest-kr/), or open `docs/index.html` locally. It is a single self-contained file with all the data inside. Open it in a browser. Base map tiles, fonts and two small libraries load from the internet.
 
 ## How it works, briefly
 
