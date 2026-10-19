@@ -15,6 +15,7 @@ PAGE = (ROOT / "out" / "mcfarthest-kr.html").read_text(encoding="utf-8")
 SETS = json.load(open(ROOT / "out" / "sets.json", encoding="utf-8"))["sets"]
 CHROME = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
 TMP = Path(tempfile.mkdtemp(prefix="mf_gif_"))
+LANG = "en"                                   # README 가 영어라 영어 화면으로 찍음
 
 def slider_js(r, rstar):
     v = 1000 * math.log(r / 0.1) / math.log(rstar * 1.25 / 0.1)
@@ -29,7 +30,7 @@ def shoot(args):
     for _ in range(3):                         # 가끔 크롬이 멈춤 → 다시
         try:
             subprocess.run([CHROME, "--headless=new", "--hide-scrollbars", f"--window-size={size[0]},{size[1]}", "--virtual-time-budget=6000",
-                            f"--screenshot={png}", html.as_uri()], capture_output=True, timeout=90)
+                            f"--screenshot={png}", html.as_uri() + "#" + LANG], capture_output=True, timeout=90)
             if png.exists(): return png
         except subprocess.TimeoutExpired:
             pass

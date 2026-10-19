@@ -2,7 +2,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&family=Noto+Sans:wght@400;500;700;900&family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Sans+Devanagari:wght@400;500;700;900&display=swap">
 <style>
 /* 레이아웃: 첫 화면 한 장에 지도와 조작부 — PC 는 지도 왼쪽·조작 오른쪽, 폰은 제목·지도·조작 세로. 그 아래로 결과·공식·제작기 */
 :root {
@@ -21,15 +21,23 @@
   --cu: #8bd94e;
   --se: #ff9f43;
   --e24: #ffd84d;
-  --font-kr: "Pretendard", "Pretendard Variable", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-kr: "Pretendard", "Pretendard Variable", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans", sans-serif;
   --font-num: "Space Grotesk", "Pretendard", "Noto Sans KR", ui-sans-serif, sans-serif;
   color-scheme: dark;
 }
+:root:lang(en), :root:lang(pt), :root:lang(ru) { --font-kr: "Noto Sans", "Pretendard", "Noto Sans KR", system-ui, sans-serif; }
+:root:lang(ja) { --font-kr: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", "Noto Sans KR", sans-serif; }
+:root:lang(zh) { --font-kr: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Noto Sans KR", sans-serif; }
+:root:lang(en) .stage h1, :root:lang(pt) .stage h1, :root:lang(ru) .stage h1 { font-size: clamp(24px, 5.6vw, 36px); }
+:root:lang(ja) .stage h1, :root:lang(zh) .stage h1 { font-size: clamp(26px, 6vw, 40px); }
+:root:lang(hi) { --font-kr: "Noto Sans Devanagari", "Noto Sans", "Nirmala UI", sans-serif; }
 * { box-sizing: border-box; }
 body {
   background: var(--bg); color: var(--fg); font-family: var(--font-kr);
-  font-size: 17px; line-height: 1.65; -webkit-font-smoothing: antialiased; word-break: keep-all;
+  font-size: 17px; line-height: 1.65; -webkit-font-smoothing: antialiased;
 }
+:root:lang(ko) body { word-break: keep-all; }
+:root:lang(ja) body, :root:lang(zh) body { line-break: strict; }
 .wrap {
   max-width: 760px; margin: 0 auto;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
@@ -114,6 +122,9 @@ h2 { font-size: 26px; font-weight: 800; margin: 0 0 14px; letter-spacing: -0.01e
   position: absolute; right: 10px; bottom: 8px; font-size: 11px; color: var(--muted);
   background: rgba(8, 12, 14, 0.72); padding: 2px 8px; border-radius: 4px;
 }
+.topline { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.langsel { height: 32px; padding: 0 10px; border-radius: 16px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); font: 500 14px var(--font-kr); cursor: pointer; }
+.langsel:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
 .brands { display: flex; flex-wrap: wrap; gap: 8px; }
 .brands button {
   display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 13px; border-radius: 18px; cursor: pointer;
@@ -214,25 +225,25 @@ input[type=range] { flex: 1 1 200px; min-width: 0; accent-color: var(--amber); h
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
-<section class="stage" aria-label="반지름을 키우는 지도">
+<section class="stage" data-ia="a_stage" aria-label="반지름을 키우는 지도">
   <header class="head">
-    <div class="eyebrow">Convenience-store farthest point · Korea</div>
-    <h1>편의점에서 <span class="far">가장 먼</span> 곳</h1>
-    <p class="lede">대한민국에서 편의점과 가장 멀리 떨어질 수 있는 곳은 어디일까요</p>
+    <div class="topline"><div class="eyebrow">Convenience-store farthest point · Korea</div><select class="langsel" id="lang" data-ia="lang" aria-label="언어"></select></div>
+    <h1 data-ih="h1">편의점에서 <span class="far">가장 먼</span> 곳</h1>
+    <p class="lede" data-i="lede">대한민국에서 편의점과 가장 멀리 떨어질 수 있는 곳은 어디일까요</p>
   </header>
-    <div class="map" id="map"><canvas id="cv" aria-label="편의점마다 같은 반지름의 원을 그린 지도"></canvas><div class="tag" id="maptag">서울</div><button type="button" class="recenter" id="recenter" hidden>자동 시점</button><div class="credit">배경지도 © Esri · 지명 통계청</div><div class="pop" id="pop" hidden></div><div class="tip" id="tip" hidden></div></div>
+    <div class="map" id="map"><canvas id="cv" data-ia="a_map" aria-label="편의점마다 같은 반지름의 원을 그린 지도"></canvas><div class="tag" id="maptag">서울</div><button type="button" class="recenter" id="recenter" data-i="recenter" hidden>자동 시점</button><div class="credit" data-i="credit">배경지도 © Esri · 지명 통계청</div><div class="pop" id="pop" hidden></div><div class="tip" id="tip" hidden></div></div>
   <div class="panel">
-    <div class="brands" role="group" aria-label="편의점 브랜드">
-      <button type="button" data-b="all" aria-pressed="true"><i style="background:var(--fg)"></i>전체 <b id="bc-all"></b></button>
+    <div class="brands" role="group" data-ia="a_brands" aria-label="편의점 브랜드">
+      <button type="button" data-b="all" aria-pressed="true"><i style="background:var(--fg)"></i><span data-i="b_all">전체</span> <b id="bc-all"></b></button>
       <button type="button" data-b="gs" aria-pressed="false"><i style="background:var(--gs)"></i>GS25 <b id="bc-gs"></b></button>
       <button type="button" data-b="cu" aria-pressed="false"><i style="background:var(--cu)"></i>CU <b id="bc-cu"></b></button>
-      <button type="button" data-b="se" aria-pressed="false"><i style="background:var(--se)"></i>세븐일레븐 <b id="bc-se"></b></button>
-      <button type="button" data-b="e24" aria-pressed="false"><i style="background:var(--e24)"></i>이마트24 <b id="bc-e24"></b></button>
+      <button type="button" data-b="se" aria-pressed="false"><i style="background:var(--se)"></i><span data-i="b_se">세븐일레븐</span> <b id="bc-se"></b></button>
+      <button type="button" data-b="e24" aria-pressed="false"><i style="background:var(--e24)"></i><span data-i="b_e24">이마트24</span> <b id="bc-e24"></b></button>
     </div>
     <div class="stats">
       <div>
         <div class="eyebrow">Radius</div>
-        <div class="big r-val"><span id="rv">8</span><small id="ru">km</small></div>
+        <div class="big r-val"><span id="rv">8</span><small id="runit">km</small></div>
       </div>
       <div class="right">
         <div class="eyebrow" id="nlabel">편의점</div>
@@ -240,20 +251,20 @@ input[type=range] { flex: 1 1 200px; min-width: 0; accent-color: var(--amber); h
       </div>
     </div>
     <div>
-      <p class="cover-line">국토의 <b id="cov">0%</b>가 이 거리 안에 편의점이 있습니다</p>
-      <p class="pairs-line">서로 겹친 원 <b id="pairs">0</b>쌍</p>
+      <p class="cover-line" data-ih="cover" data-v="cov">국토의 <b id="cov">0%</b>가 이 거리 안에 편의점이 있습니다</p>
+      <p class="pairs-line" data-ih="pairs" data-v="pairs">서로 겹친 원 <b id="pairs">0</b>쌍</p>
     </div>
     <div class="controls">
       <div class="row">
         <button class="play" id="play" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><path id="playIcon" d="M5 3l12 7-12 7z" fill="currentColor"/></svg><span id="playTxt">재생</span></button>
-        <input type="range" id="slider" min="0" max="1000" value="600" aria-label="반지름">
+        <input type="range" id="slider" min="0" max="1000" value="600" data-ia="a_slider" aria-label="반지름">
       </div>
-      <div class="seg" role="group" aria-label="범위">
-        <button type="button" id="seg-south" data-k="south" aria-pressed="true">DMZ 밖 본토</button>
-        <button type="button" id="seg-mainland" data-k="mainland" aria-pressed="false">DMZ 포함</button>
-        <button type="button" id="seg-all" data-k="all" aria-pressed="false">섬 포함</button>
+      <div class="seg" role="group" data-ia="a_region" aria-label="범위">
+        <button type="button" id="seg-south" data-k="south" aria-pressed="true" data-i="seg_south">DMZ 밖 본토</button>
+        <button type="button" id="seg-mainland" data-k="mainland" aria-pressed="false" data-i="seg_mainland">DMZ 포함</button>
+        <button type="button" id="seg-all" data-k="all" aria-pressed="false" data-i="seg_all">섬 포함</button>
       </div>
-      <p class="hint">지도는 끌어서 옮기고 휠이나 두 손가락, 더블클릭으로 확대합니다. 점을 누르면 편의점 이름이, 빈 곳을 누르면 가장 가까운 편의점이 나옵니다</p>
+      <p class="hint" data-i="hint">지도는 끌어서 옮기고 휠이나 두 손가락, 더블클릭으로 확대합니다. 점을 누르면 편의점 이름이, 빈 곳을 누르면 가장 가까운 편의점이 나옵니다</p>
     </div>
   </div>
 </section>
@@ -263,47 +274,47 @@ input[type=range] { flex: 1 1 200px; min-width: 0; accent-color: var(--amber); h
     <div class="eyebrow">Answer · <span id="ansSet">전체 편의점</span></div>
     <p class="place" id="place">경북 울진군 수비면</p>
     <p class="sub" id="placeNote"></p>
-    <div class="dist"><span class="num" id="rstar">19.83 km</span><span class="sub">가장 가까운 편의점까지 직선거리</span></div>
-    <div class="zoom"><canvas id="zv" aria-label="최원점 주변 확대"></canvas></div>
+    <div class="dist"><span class="num" id="rstar">19.83 km</span><span class="sub" data-i="dist_sub">가장 가까운 편의점까지 직선거리</span></div>
+    <div class="zoom"><canvas id="zv" data-ia="a_zoom" aria-label="최원점 주변 확대"></canvas></div>
     <ul class="stores" id="stores"></ul>
     <p class="sub num" id="coord"></p>
   </section>
 
   <section>
-    <h2>계산에 쓴 공식</h2>
+    <h2 data-i="h2_math">계산에 쓴 공식</h2>
     <div class="math">
       <div class="eq">
-        <h3>두 점 사이 거리</h3>
-        <p>지구를 반지름 6,371 km 구로 보고 대원거리를 씁니다. 실제 계산은 두 점을 단위벡터로 바꿔 현의 길이 c를 구한 뒤 거리로 되돌립니다.</p>
+        <h3 data-i="eq1_h">두 점 사이 거리</h3>
+        <p data-i="eq1_p">지구를 반지름 6,371 km 구로 보고 대원거리를 씁니다. 실제 계산은 두 점을 단위벡터로 바꿔 현의 길이 c를 구한 뒤 거리로 되돌립니다.</p>
         <div class="tex" data-tex="d = 2R\arcsin\sqrt{\sin^2\tfrac{\Delta\varphi}{2}+\cos\varphi_1\cos\varphi_2\sin^2\tfrac{\Delta\lambda}{2}} \;=\; 2R\arcsin\tfrac{c}{2}"></div>
       </div>
       <div class="eq">
-        <h3>두 원이 만나는 조건과 교차점</h3>
-        <p>반지름이 r인 두 원은 중심 사이 거리 ℓ이 2r 이하일 때 만납니다. 교차점은 두 중심의 수직이등분선 위에 있고, r이 커질수록 그 선을 따라 바깥으로 미끄러집니다.</p>
+        <h3 data-i="eq2_h">두 원이 만나는 조건과 교차점</h3>
+        <p data-i="eq2_p">반지름이 r인 두 원은 중심 사이 거리 ℓ이 2r 이하일 때 만납니다. 교차점은 두 중심의 수직이등분선 위에 있고, r이 커질수록 그 선을 따라 바깥으로 미끄러집니다.</p>
         <div class="tex" data-tex="\ell=\lVert s_i-s_j\rVert\le 2r,\qquad P_\pm = m \pm \sqrt{r^2-\left(\tfrac{\ell}{2}\right)^2}\,\hat n"></div>
-        <p class="live">지금 반지름에서 서로 겹친 원 <b id="pairs2">0</b>쌍 · 교차점 <b id="pts2">0</b>개</p>
+        <p class="live" data-ih="live_pairs" data-v="pairs2,pts2">지금 반지름에서 서로 겹친 원 <b id="pairs2">0</b>쌍 · 교차점 <b id="pts2">0</b>개</p>
       </div>
       <div class="eq">
-        <h3>원과 원이 맞닿는 선 = 보로노이 경계</h3>
-        <p>지도에서 노란 선은 두 원이 처음 만난 뒤 계속 맞닿아 있는 자리입니다. 그 선 위의 점은 두 편의점에서 거리가 같습니다. 각 편의점이 가장 가까운 영역을 나누는 경계와 같습니다.</p>
+        <h3 data-i="eq3_h">원과 원이 맞닿는 선 = 보로노이 경계</h3>
+        <p data-i="eq3_p">지도에서 노란 선은 두 원이 처음 만난 뒤 계속 맞닿아 있는 자리입니다. 그 선 위의 점은 두 편의점에서 거리가 같습니다. 각 편의점이 가장 가까운 영역을 나누는 경계와 같습니다.</p>
         <div class="tex" data-tex="V_i=\{\,p:\ d(p,s_i)\le d(p,s_j)\ \ \forall j\,\}"></div>
       </div>
       <div class="eq">
-        <h3>세 원이 한 점에서 만날 때 = 외심</h3>
-        <p>세 원이 동시에 한 점에서 만나는 순간의 그 점이 보로노이 꼭짓점이고, 세 편의점이 이루는 삼각형의 외심입니다. 구 위에서는 세 단위벡터로 만든 평면의 법선 방향이 곧 외심입니다.</p>
+        <h3 data-i="eq4_h">세 원이 한 점에서 만날 때 = 외심</h3>
+        <p data-i="eq4_p">세 원이 동시에 한 점에서 만나는 순간의 그 점이 보로노이 꼭짓점이고, 세 편의점이 이루는 삼각형의 외심입니다. 구 위에서는 세 단위벡터로 만든 평면의 법선 방향이 곧 외심입니다.</p>
         <div class="tex" data-tex="R_\triangle=\frac{abc}{4K},\qquad \hat o=\frac{(b-a)\times(c-a)}{\lVert (b-a)\times(c-a)\rVert}"></div>
-        <p class="live">전국 편의점으로 만든 들로네 삼각형 <b id="nv2">0</b>개, 외심 후보도 같은 수</p>
+        <p class="live" data-ih="live_tri" data-v="nv2">전국 편의점으로 만든 들로네 삼각형 <b id="nv2">0</b>개, 외심 후보도 같은 수</p>
       </div>
       <div class="eq">
-        <h3>덮인 비율</h3>
-        <p>국토 L 가운데 어느 편의점의 원 안에라도 들어간 넓이의 비율입니다.</p>
+        <h3 data-i="eq5_h">덮인 비율</h3>
+        <p data-i="eq5_p">국토 L 가운데 어느 편의점의 원 안에라도 들어간 넓이의 비율입니다.</p>
         <div class="tex" data-tex="C(r)=\frac{\left|\,L\cap\bigcup_i B(s_i,r)\,\right|}{|L|}"></div>
         <div class="chart" id="chart"></div>
         <p class="live" id="halfline"></p>
       </div>
       <div class="eq">
-        <h3>가장 먼 곳</h3>
-        <p>모든 지점에서 가장 가까운 편의점까지의 거리를 재고, 그 값이 가장 큰 지점을 고릅니다. 원을 키울 때 마지막까지 덮이지 않고 남는 한 점이 바로 이 점이고, 그때의 반지름이 답입니다. 후보는 육지 안의 외심과 해안선 위의 점 두 종류뿐입니다.</p>
+        <h3 data-i="eq6_h">가장 먼 곳</h3>
+        <p data-i="eq6_p">모든 지점에서 가장 가까운 편의점까지의 거리를 재고, 그 값이 가장 큰 지점을 고릅니다. 원을 키울 때 마지막까지 덮이지 않고 남는 한 점이 바로 이 점이고, 그때의 반지름이 답입니다. 후보는 육지 안의 외심과 해안선 위의 점 두 종류뿐입니다.</p>
         <div class="tex" data-tex="p^*=\arg\max_{p\in L}\ \min_i\ d(p,s_i),\qquad r^*=\min_i d(p^*,s_i)"></div>
         <p class="live" id="rstarline"></p>
       </div>
@@ -311,23 +322,23 @@ input[type=range] { flex: 1 1 200px; min-width: 0; accent-color: var(--amber); h
   </section>
 
   <section class="make">
-    <h2>만든 방법</h2>
+    <h2 data-i="h2_make">만든 방법</h2>
     <ol>
-      <li>소상공인시장진흥공단 상가정보 2026년 6월판 전국 파일에서 업종이 편의점인 54,446곳을 뽑았습니다. 같은 좌표를 합치면 49,244곳입니다.</li>
-      <li>통계청 2013년 시도 경계를 합쳐 섬 2,021개를 포함한 국토 폴리곤을 만들었습니다. DMZ 밖 본토는 Natural Earth의 DMZ 남방한계선 북쪽을 잘라냈습니다.</li>
-      <li>편의점 좌표를 단위구 위의 벡터로 바꾸고 볼록껍질을 구했습니다. 껍질의 삼각형 면 하나가 구면 들로네 삼각형 하나이고, 면의 법선이 외심입니다. 0.3초 걸립니다.</li>
-      <li>육지 안에 있는 외심 9만여 개와 해안선을 20 m 간격으로 찍은 점 30만여 개를 KD트리로 가장 가까운 편의점과 대조해 최댓값을 골랐습니다.</li>
-      <li>덮인 비율은 국토를 약 550 m 격자 135만 칸으로 나눠 각 칸의 거리를 구한 뒤 넓이 가중으로 누적했습니다.</li>
+      <li data-i="mk1">소상공인시장진흥공단 상가정보 2026년 6월판 전국 파일에서 업종이 편의점인 54,446곳을 뽑았습니다. 같은 좌표를 합치면 49,244곳입니다.</li>
+      <li data-i="mk2">통계청 2013년 시도 경계를 합쳐 섬 2,021개를 포함한 국토 폴리곤을 만들었습니다. DMZ 밖 본토는 Natural Earth의 DMZ 남방한계선 북쪽을 잘라냈습니다.</li>
+      <li data-i="mk3">편의점 좌표를 단위구 위의 벡터로 바꾸고 볼록껍질을 구했습니다. 껍질의 삼각형 면 하나가 구면 들로네 삼각형 하나이고, 면의 법선이 외심입니다. 0.3초 걸립니다.</li>
+      <li data-i="mk4">육지 안에 있는 외심 9만여 개와 해안선을 20 m 간격으로 찍은 점 30만여 개를 KD트리로 가장 가까운 편의점과 대조해 최댓값을 골랐습니다.</li>
+      <li data-i="mk5">덮인 비율은 국토를 약 550 m 격자 135만 칸으로 나눠 각 칸의 거리를 구한 뒤 넓이 가중으로 누적했습니다.</li>
     </ol>
-    <p style="margin-top:18px">한계</p>
+    <p style="margin-top:18px" data-i="lim_h">한계</p>
     <ul>
-      <li>상가정보의 업종 분류를 그대로 따랐습니다. 농협 지소처럼 편의점으로 분류된 매장도 포함되고, 등록되지 않은 매장은 빠집니다. 흑산도에는 편의점으로 분류된 매장이 없어서 가거도의 최근접이 진도가 됐습니다.</li>
-      <li>경계가 2013년 기준이라 그 뒤 생긴 매립지는 반영되지 않았습니다.</li>
-      <li>모든 거리는 직선 대원거리입니다. 산길로 걸으면 훨씬 멉니다.</li>
+      <li data-i="lim1">상가정보의 업종 분류를 그대로 따랐습니다. 농협 지소처럼 편의점으로 분류된 매장도 포함되고, 등록되지 않은 매장은 빠집니다. 흑산도에는 편의점으로 분류된 매장이 없어서 가거도의 최근접이 진도가 됐습니다.</li>
+      <li data-i="lim2">경계가 2013년 기준이라 그 뒤 생긴 매립지는 반영되지 않았습니다.</li>
+      <li data-i="lim3">모든 거리는 직선 대원거리입니다. 산길로 걸으면 훨씬 멉니다.</li>
     </ul>
   </section>
 
-  <div class="foot">편의점 위치: 소상공인시장진흥공단 상가정보 2026-06 · 경계: 통계청 2013 · DMZ: Natural Earth · 배경지도: Esri World Dark Gray · 지명: 통계청 행정구역 2013 · 착안: everything.in.math의 McFarthest point</div>
+  <div class="foot" data-i="foot">편의점 위치: 소상공인시장진흥공단 상가정보 2026-06 · 경계: 통계청 2013 · DMZ: Natural Earth · 배경지도: Esri World Dark Gray · 지명: 통계청 행정구역 2013 · 착안: everything.in.math의 McFarthest point</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
@@ -337,7 +348,48 @@ input[type=range] { flex: 1 1 200px; min-width: 0; accent-color: var(--amber); h
 (() => {
 const K = window.KR, KF = window.KF;
 const $ = id => document.getElementById(id);
-const fmt = n => Math.round(n).toLocaleString("ko-KR");
+// ── 언어: 주소 #언어 → 지난번 선택 → 브라우저 언어 → 영어 브라우저면 지역·시간대로 나라 추정 → 영어 ──
+const CODES = LANGS.map(l => l[0]);
+const TZ = [[/^Asia\/(Seoul)/, "ko"], [/^Asia\/(Kolkata|Calcutta)/, "hi"], [/^Asia\/(Tokyo)/, "ja"], [/^Asia\/(Shanghai|Chongqing|Harbin|Urumqi|Taipei|Hong_Kong|Macau)/, "zh"],
+            [/^America\/(Sao_Paulo|Bahia|Fortaleza|Recife|Belem|Manaus|Cuiaba|Porto_Velho|Boa_Vista|Rio_Branco|Maceio|Araguaina|Campo_Grande|Santarem|Noronha)|^Europe\/Lisbon|^Atlantic\/(Azores|Madeira)|^Africa\/(Luanda|Maputo)/, "pt"],
+            [/^Europe\/(Moscow|Minsk|Kaliningrad|Samara|Volgograd|Kirov|Saratov|Ulyanovsk|Astrakhan)|^Asia\/(Almaty|Qostanay|Aqtobe|Aqtau|Atyrau|Oral|Qyzylorda|Bishkek|Tashkent|Samarkand|Dushanbe|Ashgabat|Yekaterinburg|Omsk|Novosibirsk|Barnaul|Tomsk|Novokuznetsk|Krasnoyarsk|Irkutsk|Chita|Yakutsk|Khandyga|Vladivostok|Ust-Nera|Magadan|Sakhalin|Srednekolymsk|Kamchatka|Anadyr)/, "ru"]];
+const REGION = { KR: "ko", IN: "hi", JP: "ja", CN: "zh", TW: "zh", HK: "zh", BR: "pt", PT: "pt", AO: "pt", MZ: "pt", RU: "ru", BY: "ru", KZ: "ru", KG: "ru", UZ: "ru", TJ: "ru" };
+function pickLang() {
+  const h = location.hash.slice(1).toLowerCase(); if (CODES.includes(h)) return h;
+  try { const v = localStorage.getItem("mf-lang"); if (CODES.includes(v)) return v; } catch (e) {}
+  const prefs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "en"];
+  for (const l of prefs) {
+    const [base, region] = l.split("-"), b = (base || "").toLowerCase();
+    if (b === "en") {
+      if (region && REGION[region.toUpperCase()]) return REGION[region.toUpperCase()];
+      let tz = ""; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (e) {}
+      for (const [re, lg] of TZ) if (re.test(tz)) return lg;
+      return "en";
+    }
+    if (CODES.includes(b)) return b;
+  }
+  let tz = ""; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (e) {}
+  for (const [re, lg] of TZ) if (re.test(tz)) return lg;
+  return "en";
+}
+let LANG = pickLang();
+const tr = k => (I18N[LANG] && I18N[LANG][k]) ?? I18N.en[k] ?? I18N.ko[k] ?? k;
+const tf = (k, v) => tr(k).replace(/\{(\w+)\}/g, (_, n) => v[n] ?? "");
+const fmt = n => Math.round(n).toLocaleString(LOCALE[LANG] || "en-US");
+const PL = s => LANG === "ko" ? s : romPlace(s);        // 지명
+const NM = s => LANG === "ko" ? s : romName(s);         // 상호
+const BLABEL = b => tr("b_" + b);
+function applyLang() {
+  document.documentElement.lang = LANG;
+  document.title = tr("title");
+  document.querySelectorAll("[data-i]").forEach(el => { el.textContent = tr(el.dataset.i); });
+  document.querySelectorAll("[data-ia]").forEach(el => el.setAttribute("aria-label", tr(el.dataset.ia)));
+  document.querySelectorAll("[data-ih]").forEach(el => {
+    const vars = {}; (el.dataset.v || "").split(",").filter(Boolean).forEach(id => { vars[id] = `<b id="${id}"></b>`; });
+    el.innerHTML = tf(el.dataset.ih, vars);
+  });
+  $("playTxt").textContent = tr(st && st.playing ? "pause" : "play");
+}
 
 // ── 점포 복원: 전체 배열 A*, 지금 보는 묶음은 N · X · Y · FX · BR ──
 const raw = Uint8Array.from(atob(K.stores), c => c.charCodeAt(0));
@@ -688,7 +740,7 @@ const LV = [
 ];
 const TW = new Map();
 function drawLabels(view, cam) {
-  cached(view, "lbC", camKey(view, cam), ctx => {
+  cached(view, "lbC", camKey(view, cam) + "|" + LANG, ctx => {
     const { w, h, dpr } = view, s = cam.s;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineJoin = "round";
@@ -708,7 +760,8 @@ function drawLabels(view, cam) {
     LB.forEach((list, li) => {
       const L = LV[li]; if (s > L.max || s < L.min) return;
       ctx.font = `${L.font} ${fam}`;
-      for (const [name, x, y] of list) {
+      for (const [name0, x, y] of list) {
+        const name = PL(name0);
         const sx = w / 2 + (x - cam.cx) * s, sy = h / 2 + (y - cam.cy) * s;
         if (sx < -40 || sx > w + 40 || sy < -20 || sy > h + 20) continue;
         const k = li + name; let tw0 = TW.get(k); if (tw0 === undefined) { tw0 = ctx.measureText(name).width; TW.set(k, tw0); }
@@ -854,11 +907,11 @@ function zoomAt(px, py, f) {
   setCam({ s: s2, cx: wx - (px - M.w / 2) / s2, cy: wy - (py - M.h / 2) / s2 });
 }
 function nearestName(cam) {
-  if (cam.s < fitScale(M) * 1.3) return "전국";
+  if (cam.s < fitScale(M) * 1.3) return tr("nation");
   const list = cam.s < 4 ? K.labels.sido : K.labels.sgg;
   let best = null, bd = 1e18;
   for (const L of list) { const d = (L[1] - cam.cx) ** 2 + (L[2] - cam.cy) ** 2; if (d < bd) { bd = d; best = L[0]; } }
-  return best || "";
+  return best ? PL(best) : "";
 }
 (() => {
   const cv = $("cv"), ptrs = new Map(); let last = null, down = null, moved = false, multi = false;
@@ -917,7 +970,7 @@ function hover(p) {
     const n = nearestAt(q), tip = $("tip");
     if (!n || !n.onDot) { tip.hidden = true; $("cv").classList.remove("over"); return; }
     const list = n.list(), o = list[0]; if (!o) { tip.hidden = true; return; }
-    tip.innerHTML = `<i style="background:${COL[BRCOL[o.b]]}"></i>${esc(o.name)}` + (list.length > 1 ? `<span>외 ${list.length - 1}곳</span>` : "");
+    tip.innerHTML = `<i style="background:${COL[BRCOL[o.b]]}"></i>${esc(NM(o.name))}` + (list.length > 1 ? `<span>${tf("more", { n: list.length - 1 })}</span>` : "");
     tip.hidden = false; $("cv").classList.add("over");
     const W = tip.offsetWidth;
     tip.style.left = Math.max(6, Math.min(M.w - W - 6, q.x + 12)) + "px";
@@ -929,14 +982,14 @@ function pick(p) {
   $("tip").hidden = true;
   const { wx, wy, i: bi, onDot } = n, bk = n.km * n.km;
   const list = n.list();
-  const items = list.slice(0, 6).map(o => `<li><i style="background:${COL[BRCOL[o.b]]}"></i><div>${esc(o.name)}<span>${esc(o.dong)}</span></div></li>`).join("")
-    + (list.length > 6 ? `<li><i></i><div><span>외 ${list.length - 6}곳</span></div></li>` : "");
+  const items = list.slice(0, 6).map(o => `<li><i style="background:${COL[BRCOL[o.b]]}"></i><div>${esc(NM(o.name))}<span>${esc(PL(o.dong))}</span></div></li>`).join("")
+    + (list.length > 6 ? `<li><i></i><div><span>${tf("more", { n: list.length - 6 })}</span></div></li>` : "");
   const km = Math.sqrt(bk);
-  const head = onDot ? (list.length > 1 ? `이 자리 편의점 ${list.length}곳` : "이 자리 편의점")
-    : `여기서 가장 가까운 ${st.b === "all" ? "편의점" : SET().label}`;
+  const head = onDot ? (list.length > 1 ? tf("hereN", { n: list.length }) : tr("here1"))
+    : tf("near", { b: st.b === "all" ? tr("store_word") : BLABEL(st.b) });
   const el = $("pop");
-  el.innerHTML = `<button type="button" class="x" aria-label="닫기">×</button><p class="h">${head}</p><ul>${items}</ul>`
-    + (onDot ? "" : `<div class="d">${km < 1 ? Math.round(km * 1000) + " m" : km.toFixed(2) + " km"}<small>직선거리</small></div>`);
+  el.innerHTML = `<button type="button" class="x" aria-label="${tr("close")}">×</button><p class="h">${head}</p><ul>${items}</ul>`
+    + (onDot ? "" : `<div class="d">${km < 1 ? Math.round(km * 1000) + " m" : km.toFixed(2) + " km"}<small>${tr("straight")}</small></div>`);
   el.hidden = false;
   const W = el.offsetWidth, H = el.offsetHeight;
   el.style.left = Math.max(8, Math.min(M.w - W - 8, p.x + 14)) + "px";
@@ -1036,7 +1089,7 @@ function drawChart(r) {
   const cr = Math.min(Math.max(r, 0.1), 100), cv = interp(CR, ys, cr);
   const grid = [0, 0.5, 1].map(v => `<line x1="${L}" x2="${W - R}" y1="${ly(v)}" y2="${ly(v)}" stroke="${COL.muted}" stroke-opacity="0.25"/><text x="${L - 8}" y="${ly(v) + 4}" text-anchor="end">${v * 100}%</text>`).join("");
   const ticks = [0.1, 1, 10, 100].map(v => `<text x="${lx(v)}" y="${H - 8}" text-anchor="middle">${v} km</text>`).join("");
-  $("chart").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="반지름에 따른 덮인 비율">${grid}${ticks}
+  $("chart").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${tr("a_chart")}">${grid}${ticks}
     <path d="${d} L${lx(100)} ${ly(0)} L${lx(0.1)} ${ly(0)} Z" fill="${COL.amber}" fill-opacity="0.10"/>
     <path d="${d}" fill="none" stroke="${COL.amber}" stroke-width="2.2"/>
     <line x1="${lx(cr)}" x2="${lx(cr)}" y1="${T}" y2="${H - B}" stroke="${COL.fg}" stroke-opacity="0.35" stroke-dasharray="3 3"/>
@@ -1048,18 +1101,17 @@ function setRegion(k) {
   st.k = k;
   document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.k === k ? "true" : "false"));
   const res = RES(), S = SET();
-  $("place").textContent = res.place;
-  $("placeNote").textContent = res.note + (k === "all" && st.b === "all" ? ` · 독도는 ${K.dokdo.toFixed(1)} km` : "");
-  $("ansSet").textContent = st.b === "all" ? "전체 편의점" : S.label + "만";
-  $("nv").textContent = fmt(S.n); $("nlabel").textContent = st.b === "all" ? "편의점" : S.label;
+  $("place").textContent = PL(res.place);
+  $("placeNote").textContent = tr(res.dmz ? "note_dmz" : res.kind === "vertex" ? "note_vertex" : "note_coast") + (k === "all" && st.b === "all" ? tf("dokdo", { d: K.dokdo.toFixed(1) }) : "");
+  $("ansSet").textContent = st.b === "all" ? tr("ans_all") : tf("ans_only", { b: BLABEL(st.b) });
+  $("nv").textContent = fmt(S.n); $("nlabel").textContent = st.b === "all" ? tr("stores") : BLABEL(st.b);
   $("nv2").textContent = fmt(S.nTri);
   $("rstar").textContent = res.r.toFixed(2) + " km";
   $("coord").textContent = `${res.lat.toFixed(5)}°N  ${res.lon.toFixed(5)}°E`;
   $("stores").innerHTML = res.stores.map((so, i) =>
-    `<li><span class="k">${i + 1}</span><span class="nm">${so.name}${so.branch ? " " + so.branch : ""}<span>${so.addr}</span></span><span class="d">${so.d.toFixed(2)} km</span></li>`).join("");
-  const kind = res.kind === "vertex" ? "세 원이 한 점에서 만나는 외심이 답입니다." : "답이 육지 안 외심이 아니라 경계선 위에 있습니다.";
-  $("rstarline").innerHTML = `이 범위의 답 <b>r* = ${res.r.toFixed(2)} km</b>. ${kind}`;
-  $("halfline").innerHTML = `반지름 <b>${S.half[k].toFixed(2)} km</b>면 국토의 절반, 10 km면 <b>${(interp(CR, S.cov[k], 10) * 100).toFixed(1)}%</b>가 덮입니다.`;
+    `<li><span class="k">${i + 1}</span><span class="nm">${esc(NM(so.name + (so.branch ? " " + so.branch : "")))}<span>${esc(PL(so.addr))}</span></span><span class="d">${so.d.toFixed(2)} km</span></li>`).join("");
+  $("rstarline").innerHTML = tf("rstar", { r: `<b>r* = ${res.r.toFixed(2)} km</b>`, kind: tr(res.kind === "vertex" ? "kind_vertex" : "kind_coast") });
+  $("halfline").innerHTML = tf("half", { h: `<b>${S.half[k].toFixed(2)} km</b>`, c: `<b>${(interp(CR, S.cov[k], 10) * 100).toFixed(1)}%</b>` });
   zoomKey = "";
   $("slider").value = Math.round(rToSlider(Math.min(st.r, rMax())));
   st.r = sliderToR(+$("slider").value);
@@ -1081,12 +1133,12 @@ function step(t) {
 function start() {
   st.playing = true; t0 = 0;
   v0 = +$("slider").value >= rToSlider(RES().r) - 1 ? 0 : +$("slider").value;
-  $("playTxt").textContent = "멈춤"; $("playIcon").setAttribute("d", "M5 3h4v14H5zM11 3h4v14h-4z");
+  $("playTxt").textContent = tr("pause"); $("playIcon").setAttribute("d", "M5 3h4v14H5zM11 3h4v14h-4z");
   raf = requestAnimationFrame(step);
 }
 function stop() {
   st.playing = false; cancelAnimationFrame(raf);
-  $("playTxt").textContent = "재생"; $("playIcon").setAttribute("d", "M5 3l12 7-12 7z");
+  $("playTxt").textContent = tr("play"); $("playIcon").setAttribute("d", "M5 3l12 7-12 7z");
 }
 $("play").addEventListener("click", () => st.playing ? stop() : start());
 $("slider").addEventListener("input", e => {
@@ -1101,6 +1153,18 @@ document.querySelectorAll("[data-tex]").forEach(el => {
   try { el.innerHTML = katex.renderToString(el.dataset.tex, { output: "mathml", displayMode: true, throwOnError: false }); }
   catch (e) { el.textContent = el.dataset.tex; }
 });
+function setLang(l) {
+  LANG = l; try { localStorage.setItem("mf-lang", l); } catch (e) {}
+  if (location.hash.slice(1) !== l) history.replaceState(null, "", "#" + l);
+  applyLang(); $("lang").value = l;
+  for (const [b, S] of Object.entries(K.sets)) $("bc-" + b).textContent = fmt(S.n);
+  $("pop").hidden = true; $("tip").hidden = true;
+  setRegion(st.k); drawChart(st.r);
+}
+$("lang").innerHTML = LANGS.map(([c, n]) => `<option value="${c}">${n}</option>`).join("");
+$("lang").addEventListener("change", e => setLang(e.target.value));
+window.addEventListener("hashchange", () => { const h = location.hash.slice(1); if (CODES.includes(h) && h !== LANG) setLang(h); });
+applyLang(); $("lang").value = LANG;
 for (const [b, S] of Object.entries(K.sets)) $("bc-" + b).textContent = fmt(S.n);
 // 브랜드 고르기
 function setBrand(b) {

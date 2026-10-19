@@ -4,6 +4,8 @@ How far can you get from a convenience store in South Korea? Not very far.
 
 **[Open the interactive map →](https://desika.github.io/mcfarthest-kr/)**
 
+Available in [English](https://desika.github.io/mcfarthest-kr/#en) · [한국어](https://desika.github.io/mcfarthest-kr/#ko) · [Português](https://desika.github.io/mcfarthest-kr/#pt) · [Русский](https://desika.github.io/mcfarthest-kr/#ru) · [日本語](https://desika.github.io/mcfarthest-kr/#ja) · [中文](https://desika.github.io/mcfarthest-kr/#zh) · [हिन्दी](https://desika.github.io/mcfarthest-kr/#hi)
+
 ![Circles grow from every convenience store until the last empty spot disappears](docs/img/grow.gif)
 
 This is a hobby toy project, built with [Claude](https://claude.com/claude-code).
@@ -79,7 +81,7 @@ The math behind every step is written up in **[docs/MATH.md](docs/MATH.md)**: gr
 - **Region**: mainland outside the DMZ, mainland including the DMZ, or the whole country with islands.
 - **Pan and zoom** with drag, mouse wheel, pinch or double-click.
 - **Store names**: hover over a dot to see the store name, click it for the name and neighborhood. Click an empty spot to see the nearest store and its straight-line distance.
-- The on-page text is in Korean.
+- **Seven languages**: Korean, English, Portuguese, Russian, Japanese, Chinese and Hindi. The page opens in the visitor's language, picked from the browser language and, for English browsers, the region or time zone, so a visitor from Brazil, India or Kazakhstan sees Portuguese, Hindi or Russian. Add `#en`, `#ja` and so on to the link to choose one. Place and store names are shown in Revised Romanization outside Korean.
 
 ![GS25 only, after clicking a store](docs/img/gs25.png)
 
@@ -122,6 +124,7 @@ python tools/make_gifs.py    # the GIFs in this README, captured with headless C
 | Path | Contents |
 |---|---|
 | `src/page.html` | The page source, styles and scripts |
+| `src/i18n.js` | Text in seven languages and a Hangul romanizer for place and store names |
 | `src/brands.py` | Store name → brand, including stores registered under the operating company's name |
 | `src/compute.py`, `src/compute_sets.py` | Farthest points and coverage |
 | `src/fields.py`, `src/build_data.py`, `src/build_page.py` | Packing data for the page |
