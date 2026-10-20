@@ -1030,7 +1030,7 @@ function tileImg(kind, z, x, y, hi) {
   let t = tiles.get(key);
   if (!t) {
     t = new Image(); t.crossOrigin = "anonymous";
-    t.onload = () => { t.ok = true; request(); };
+    t.onload = () => { t.ok = true; request(); }; t.onerror = () => { t.bad = true; };
     t.src = `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/${z}/${y}/${x}`;
     tiles.set(key, t);
   }
@@ -1225,9 +1225,9 @@ function drawDots(view, cam, b, size) {
 }
 
 function drawMain(r) {
-  const cam = st.cam ? { ...st.cam, t: -1 } : camera(M, r), b = begin(M, cam), F = needField("nat");
+  const cam = st.cam ? { ...st.cam, t: -1 } : camera(M, r), b = begin(M, cam), F = KF.nat ? needField("nat") : null;
   // 전국 거리장 한 칸이 화면 1.3 px 이하면 래스터: 반지름과 상관없이 픽셀 수만큼만 일함. 더 확대하면 벡터
-  if (st.b === "all" && cam.s <= 1.3 / KF.nat.dx) { if (F) { paint(F, r, Math.max(1.4 / cam.s, F.dx * 1.6)); drawRaster(M, F); } }
+  if (st.b === "all" && KF.nat && cam.s <= 1.3 / KF.nat.dx) { if (F) { paint(F, r, Math.max(1.4 / cam.s, F.dx * 1.6)); drawRaster(M, F); } }
   else drawVector(M, cam, r, b);
   compose(M, cam, b);
   drawDots(M, cam, b, Math.max(1.3, Math.min(4, cam.s * 0.08)));   // 확대할수록 점을 키워 브랜드 색이 보이게
@@ -1525,6 +1525,14 @@ $("lang").innerHTML = LANGS.map(([c, n]) => `<option value="${c}">${n}</option>`
 $("lang").addEventListener("change", e => setLang(e.target.value));
 window.addEventListener("hashchange", () => { const h = location.hash.slice(1); if (CODES.includes(h) && h !== LANG) setLang(h); });
 applyLang(); $("lang").value = LANG;
+// 영상 제작용 조작 창구 (tools/make_reel.py 가 프레임마다 반지름·시점을 바꿔 그림)
+window.MF = {
+  st, render, setBrand, setRegion,
+  camera: r => { const c = camera(M, r); return { s: c.s, cx: c.cx, cy: c.cy }; },
+  cov: r => interp(CR, SET().cov[st.k], r), res: () => RES(), set: () => SET(),
+  ready: () => !KF.nat || !!FIELDS.nat, tilesPending: () => [...tiles.values()].filter(t => !t.ok && !t.bad).length,
+  world: (lon, lat) => [(lon - K.lon0) * K.kmx, (K.lat1 - lat) * K.kmy],
+};
 for (const [b, S] of Object.entries(K.sets)) $("bc-" + b).textContent = fmt(S.n);
 // 브랜드 고르기
 function setBrand(b) {
@@ -1546,7 +1554,7 @@ function needField(key) {
   decodeField(KF[key]).then(f => { FIELDS[key] = f; zoomKey = ""; request(); }).catch(() => {});
   return null;
 }
-needField("nat");
+if (KF.nat) needField("nat");
 setTimeout(ensureVoronoi, 400);   // 확대할 때 쓸 보로노이는 첫 화면 뒤에
 useSet("all");
 resize();

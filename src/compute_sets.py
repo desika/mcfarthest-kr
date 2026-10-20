@@ -14,6 +14,11 @@ from shapely.geometry import shape
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from brands import SETS, brand
+import os
+DATASET = os.environ.get("MF_DATASET", "cvs")          # cvs = 편의점(기본), tobacco = 담배소매점
+STORES_CSV = "tobacco_stores.csv" if DATASET == "tobacco" else "stores.csv"
+SUF = "" if DATASET == "cvs" else "_" + DATASET
+if DATASET == "tobacco": SETS = [("all", "Tobacco")]
 
 sys.stdout.reconfigure(encoding="utf-8")
 ROOT = Path(__file__).resolve().parent.parent
@@ -33,7 +38,7 @@ def arc(c): return 2 * R * np.arcsin(np.clip(c / 2, 0, 1))
 def proj(lon, lat): return (np.asarray(lon) - LON0) * KMX, (LAT1 - np.asarray(lat)) * KMY
 
 # ── 공통: 점포 · 육지 · 범위 ──
-rows = list(csv.DictReader(open(ROOT / "data" / "stores.csv", encoding="utf-8")))
+rows = list(csv.DictReader(open(ROOT / "data" / STORES_CSV, encoding="utf-8")))
 lon_all = np.array([float(r["lon"]) for r in rows]); lat_all = np.array([float(r["lat"]) for r in rows])
 br_all = np.array([brand(r["name"]) for r in rows])
 
@@ -145,7 +150,7 @@ for key, label in SETS:
     for k in REG: fields[f"{key}_{k}"] = zoom_field(tree, res[k])
     log(label, sel.sum(), "점포 ·", {k: (res[k]["place"], res[k]["r"]) for k in REG})
 
-json.dump({"r": RS.tolist(), "sets": out}, open(ROOT / "out" / "sets.json", "w", encoding="utf-8"), ensure_ascii=False)
+json.dump({"r": RS.tolist(), "sets": out}, open(ROOT / "out" / f"sets{SUF}.json", "w", encoding="utf-8"), ensure_ascii=False)
 js = "window.KF=Object.assign(window.KF||{}," + json.dumps(fields, separators=(",", ":")) + ");"
-(ROOT / "out" / "sets_fields.js").write_text(js, encoding="utf-8")
+(ROOT / "out" / f"sets_fields{SUF}.js").write_text(js, encoding="utf-8")
 log("sets_fields.js", len(js) // 1024, "KB")

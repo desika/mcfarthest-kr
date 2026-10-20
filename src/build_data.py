@@ -10,6 +10,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from brands import SETS, brand
+import os
+DATASET = os.environ.get("MF_DATASET", "cvs")          # cvs = 편의점(기본), tobacco = 담배소매점
+STORES_CSV = "tobacco_stores.csv" if DATASET == "tobacco" else "stores.csv"
+SUF = "" if DATASET == "cvs" else "_" + DATASET
+if DATASET == "tobacco": SETS = [("all", "Tobacco")]
 
 import numpy as np
 import shapely
@@ -25,7 +30,7 @@ def proj(lon, lat):
     return (np.asarray(lon) - LON0) * KMX, (LAT1 - np.asarray(lat)) * KMY
 
 res = json.load(open(ROOT / "out" / "result.json", encoding="utf-8"))
-rows = list(csv.DictReader(open(ROOT / "data" / "stores.csv", encoding="utf-8")))
+rows = list(csv.DictReader(open(ROOT / "data" / STORES_CSV, encoding="utf-8")))
 lon = np.array([float(r["lon"]) for r in rows]); lat = np.array([float(r["lat"]) for r in rows])
 key = np.round(lon, 6) * 1e7 + np.round(lat, 6)
 _, first = np.unique(key, return_index=True); first.sort()
@@ -105,7 +110,7 @@ labels = {"sido": label_points("skorea_provinces_geo_simple.json", SHORT),
           "sgg": label_points("muni_simple.json"), "emd": label_points("submuni_simple.json")}
 
 # 브랜드별 결과
-SJ = json.load(open(ROOT / "out" / "sets.json", encoding="utf-8"))
+SJ = json.load(open(ROOT / "out" / f"sets{SUF}.json", encoding="utf-8"))
 OVERRIDE = {("all", "all"): "전남 신안군 흑산면 가거도"}
 def note(rr):
     if rr["dmz"]: return "군사분계선 위, 비무장지대 안"
@@ -132,5 +137,5 @@ out = {
     "names": names, "dongs": dongs, "storeU": store_u, "storeD": store_d, "storeB": store_b,
 }
 js = "window.KR=" + json.dumps(out, ensure_ascii=False, separators=(",", ":")) + ";"
-(ROOT / "out" / "page_data.js").write_text(js, encoding="utf-8")
+(ROOT / "out" / f"page_data{SUF}.js").write_text(js, encoding="utf-8")
 print("독도→가장 가까운 편의점", out["dokdo"], "km · page_data", len(js) // 1024, "KB")
