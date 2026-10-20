@@ -1,0 +1,128 @@
+[
+  {
+    "id": "seoul",
+    "dataset": "cvs",
+    "region": "seoul",
+    "n": 9418,
+    "area": "Seoul",
+    "bbox": [
+      126.764,
+      37.428,
+      127.184,
+      37.702
+    ],
+    "eye": "SEOUL · {n} CONVENIENCE STORES",
+    "title": "How far can you get from a <b>convenience store</b> in Seoul?",
+    "l1": "Seoul has {n} convenience stores.",
+    "thing": "store",
+    "close": "In Seoul, you are never more than a {walk}-minute walk from one.",
+    "close_cap": "Never more than a {walk}-minute walk.",
+    "end1": "The farthest you can get from a convenience store in Seoul",
+    "caption": "How far can you get from a convenience store in Seoul?\n\nThere are {n} of them in 605 km². Grow a circle around each one: half of the city is covered at {half} km, and the last spot to go is {where}, {rs2} km from the nearest store. That's a {walk}-minute walk at most.\n\n서울 편의점 {n}곳. 서울에서 편의점과 가장 멀리 떨어질 수 있는 거리는 {rs2}km, 걸어서 {walk}분입니다.",
+    "tags": [
+      "#seoul",
+      "#서울",
+      "#편의점",
+      "#dataviz",
+      "#maps"
+    ]
+  },
+  {
+    "id": "mcd",
+    "dataset": "mcd",
+    "region": "south",
+    "eye": "SOUTH KOREA · {n} McDONALD'S",
+    "title": "Where is Korea's <b>McFarthest</b> spot?",
+    "l1": "South Korea has {n} McDonald's restaurants.",
+    "thing": "McDonald's",
+    "close": "This is Korea's McFarthest spot.",
+    "end1": "Korea's McFarthest spot: the farthest you can get from a McDonald's",
+    "caption": "Where is South Korea's McFarthest spot?\n\nThe McFarthest Spot is the point farthest from any McDonald's. In the US it is about 172 km away. Korea has {n} McDonald's: grow a circle around each one and the last spot to be covered is {where}, {rs2} km from the nearest restaurant. Half of the country is within {half} km of one.\n\n한국 맥도날드 {n}곳. 맥도날드에서 가장 멀리 떨어질 수 있는 곳은 {rs2}km입니다.",
+    "tags": [
+      "#mcdonalds",
+      "#mcfarthest",
+      "#southkorea",
+      "#dataviz",
+      "#maps"
+    ]
+  },
+  {
+    "id": "paik",
+    "dataset": "paik",
+    "region": "south",
+    "eye": "SOUTH KOREA · {n} PAIK JONG-WON RESTAURANTS",
+    "title": "How far can you get from <b>Paik Jong-won</b>?",
+    "l1": "Chef Paik Jong-won's brands run {n} restaurants in South Korea.",
+    "c1": "Paik Jong-won's brands: {n} restaurants.",
+    "thing": "Paik restaurant",
+    "close": "That's how far his food empire reaches.",
+    "end1": "The farthest you can get from a Paik Jong-won restaurant",
+    "caption": "How far can you get from a Paik Jong-won restaurant?\n\nPaik's Coffee, Hong Kong Banjeom, Yeokjeon Udon, Paik's Pizza, Rolling Pasta and more: {n} restaurants in South Korea. Half of the country is within {half} km of one, and the farthest spot is {where}, {rs2} km away.\n\n빽다방·홍콩반점·역전우동·빽보이피자 등 백종원 브랜드 {n}곳. 가장 멀리 떨어질 수 있는 곳은 {rs2}km입니다.",
+    "tags": [
+      "#백종원",
+      "#빽다방",
+      "#southkorea",
+      "#dataviz",
+      "#maps"
+    ]
+  },
+  {
+    "id": "kimbap",
+    "dataset": "kimbap",
+    "region": "south",
+    "eye": "SOUTH KOREA · {n} KIMBAP HEAVEN",
+    "title": "How far can you get from <b>Kimbap Heaven</b>?",
+    "l1": "Kimbap Heaven has {n} restaurants across South Korea.",
+    "thing": "Kimbap Heaven",
+    "close": "Out there, the nearest kimbap is a long drive away.",
+    "end1": "The farthest you can get from a Kimbap Heaven",
+    "caption": "How far can you get from a Kimbap Heaven?\n\nKorea's everyday snack chain has {n} restaurants. Half of the country is within {half} km of one. The last spot to be covered is {where}, {rs2} km from the nearest one.\n\n김밥천국 {n}곳. 김밥천국에서 가장 멀리 떨어질 수 있는 곳은 {rs2}km입니다.",
+    "tags": [
+      "#김밥천국",
+      "#kimbap",
+      "#southkorea",
+      "#dataviz",
+      "#maps"
+    ]
+  },
+  {
+    "id": "hotel",
+    "dataset": "hotel",
+    "region": "south",
+    "eye": "SOUTH KOREA · {n} HOTELS AND RESORTS",
+    "title": "How far can you get from a <b>hotel</b>?",
+    "l1": "South Korea has {n} hotels and resorts.",
+    "thing": "hotel",
+    "close": "Book ahead.",
+    "end1": "The farthest you can get from a hotel in South Korea",
+    "caption": "How far can you get from a hotel in South Korea?\n\n{n} hotels and resorts. Half of the country is within {half} km of one, and the farthest spot is {where}, {rs2} km away.\n\n한국 호텔·리조트 {n}곳. 호텔에서 가장 멀리 떨어질 수 있는 곳은 {rs2}km입니다.",
+    "tags": [
+      "#hotel",
+      "#travelkorea",
+      "#southkorea",
+      "#dataviz",
+      "#maps"
+    ]
+  },
+  {
+    "id": "motel",
+    "dataset": "motel",
+    "region": "south",
+    "eye": "SOUTH KOREA · {n} MOTELS",
+    "title": "How far can you get from a <b>motel</b>?",
+    "l1": "South Korea has {n} motels, almost ten times the number of hotels.",
+    "c1": "South Korea has {n} motels. Almost 10× the hotels.",
+    "thing": "motel",
+    "close": "That's closer than convenience stores. In Korea, motels reach farther than convenience stores do.",
+    "end1": "The farthest you can get from a motel in South Korea",
+    "caption": "How far can you get from a motel in South Korea?\n\n{n} motels and inns, almost ten times the number of hotels. Half of the country is within {half} km of one, and the farthest spot is {where}, {rs2} km away.\n\nThat's closer than the convenience store answer, 19.8 km. In Korea, motels cover the country better than convenience stores do.\n\n한국 모텔·여관 {n}곳. 모텔에서 가장 먼 곳은 {rs2}km로, 편의점(19.8km)보다 가깝습니다.",
+    "tags": [
+      "#motel",
+      "#travelkorea",
+      "#southkorea",
+      "#dataviz",
+      "#maps"
+    ],
+    "close_cap": "Closer than convenience stores (19.8 km). Motels win."
+  }
+]

@@ -22,3 +22,4 @@ Thumbs.db
 # 담배소매업 원본 응답
 data/tobacco/
 data/tobacco_stores.csv
+data/chain_*.csv

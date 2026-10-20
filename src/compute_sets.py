@@ -16,9 +16,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from brands import SETS, brand
 import os
 DATASET = os.environ.get("MF_DATASET", "cvs")          # cvs = 편의점(기본), tobacco = 담배소매점
-STORES_CSV = "tobacco_stores.csv" if DATASET == "tobacco" else "stores.csv"
+STORES_CSV = {"cvs": "stores.csv", "tobacco": "tobacco_stores.csv"}.get(DATASET, f"chain_{DATASET}.csv")   # 체인·숙박은 chain_<이름>.csv
 SUF = "" if DATASET == "cvs" else "_" + DATASET
-if DATASET == "tobacco": SETS = [("all", "Tobacco")]
+if DATASET != "cvs": SETS = [("all", DATASET)]
 
 sys.stdout.reconfigure(encoding="utf-8")
 ROOT = Path(__file__).resolve().parent.parent
@@ -50,7 +50,8 @@ sll = next(f for f in ne["features"] if f["properties"].get("NAME") == "Korean D
 L = np.array(sll["geometry"]["coordinates"]); L = L if L[0, 0] < L[-1, 0] else L[::-1]
 cut = shapely.Polygon([*L.tolist(), [L[-1, 0] + 0.5, L[-1, 1]], [L[-1, 0] + 0.5, 39.5], [L[0, 0], 39.5]])
 south = mainland.difference(cut); south = max(getattr(south, "geoms", [south]), key=lambda g: g.area)
-REG = {"south": south, "mainland": mainland, "all": land}
+seoul = shapely.union_all([shape(f["geometry"]) for f in gj["features"] if f["properties"]["name"] == "서울특별시"])
+REG = {"south": south, "mainland": mainland, "all": land, "seoul": seoul}      # seoul: 서울편 릴스용
 for g in REG.values(): shapely.prepare(g)
 BND = {k: shapely.get_coordinates(shapely.segmentize(g.boundary, 0.0002)) for k, g in REG.items()}
 BNDU = {k: unit(v[:, 0], v[:, 1]) for k, v in BND.items()}

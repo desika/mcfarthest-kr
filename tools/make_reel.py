@@ -81,6 +81,7 @@ REEL_HTML = """<div id="reel"><div class="band-t"></div><div class="band-b"></di
 FRAME_JS = """(p) => {
   const st = MF.st;
   if (p.brand && st.b !== p.brand) MF.setBrand(p.brand);
+  if (p.region && st.k !== p.region) st.k = p.region;
   st.r = p.r; st.cam = p.cam; MF.render();
   const $ = id => document.getElementById(id);
   $("r-eye").textContent = p.eye; $("r-title").innerHTML = p.title;
@@ -159,40 +160,94 @@ def farthest():
        title="How far can you get from a <b>convenience store</b>?", cov_text=None,
        end_text=[f"{rs:.2f} km", "The farthest you can get from a convenience store in South Korea", "Subi-myeon, Uljin · exactly as far from three stores"])
 
-def fly_story(name, page, res, lines, radii, eye, title, cov_text, end_text):
-    """원이 자라다 끝에서 두 번째 문장에서 정답 지점으로 날아가는 이야기"""
+def fly_story(name, page, res, lines, radii, eye, title, cov_text, end_text, fly=5, base_cam=None, region=None):
+    """원이 자라다 fly 번째 문장에서 정답 지점으로 날아가는 이야기.
+    base_cam 을 주면 그 시점에 고정해 원을 키운다(서울편). 없으면 서울→전국 자동 시점."""
     rs = res["r"]
     work = Path(tempfile.mkdtemp(prefix="reel_"))
     clips, total, audio = narrate(lines, work)
     T = [c["t0"] for c in clips] + [clips[-1]["t1"], total]
-    # 목표 시점: 울진 수비면을 화면 가운데, 세로로 3.4 r*
+    assert len(radii) == len(T), (len(radii), len(T))
     kmx, kmy = 111.320 * 0.8090169943749475, 110.95
     tx, ty = (res["lon"] - 124.55) * kmx, (38.68 - res["lat"]) * kmy
     s_t = W / (rs * 5.4)                                               # 세 원이 다 들어오는 축척
     target = {"s": s_t, "cx": tx, "cy": ty + (480 - 505) / s_t}      # 정답 점을 글자와 자막 사이에
-    nat = {"s": None}
+    nat = {}
     def at(t):
         k = max(0, min(len(T) - 2, next((i for i in range(len(T) - 1) if T[i] <= t < T[i + 1]), len(T) - 2)))
         u = (t - T[k]) / max(1e-6, T[k + 1] - T[k])
-        r = lerp_log(radii[k], radii[k + 1], ease(u)) if k < len(radii) - 1 else rs
+        r = lerp_log(radii[k], radii[k + 1], ease(u))
         if t < T[0]: r = radii[0]
         cap = next((c["cap"] for c in clips if c["t0"] - 0.15 <= t <= c["t1"] + GAP * 0.8), "")
-        cam, keys = None, 0
-        if t >= T[5]:                                                   # "마지막 한 점" 문장부터 울진으로
-            u2 = ease((t - T[5]) / (T[6] - T[5]))
-            a = nat.get("cam") or {"s": 0.0, "cx": tx, "cy": ty}
+        cam, keys = base_cam, 0
+        if t >= T[fly]:                                                 # 정답 문장부터 그 지점으로
+            u2 = ease((t - T[fly]) / (T[fly + 1] - T[fly]))
+            a = nat["cam"]
             cam = {"s": lerp_log(a["s"], target["s"], u2), "cx": a["cx"] + (target["cx"] - a["cx"]) * u2, "cy": a["cy"] + (target["cy"] - a["cy"]) * u2}
             keys = round(u2, 3)
         end = ease((t - (total - TAIL + 0.4)) / 0.8) if t > total - TAIL + 0.4 else 0
-        return {"r": r, "cam": cam, "keys": keys, "eye": eye, "showRad": True, "covText": cov_text,
+        return {"r": r, "cam": cam, "keys": keys, "eye": eye, "showRad": True, "covText": cov_text, "region": region,
                 "title": title, "cap": cap, "end": end, "endText": end_text}
-    # 확대 시작 시점의 전국 카메라를 페이지에서 받아 둔다
-    with sync_playwright() as pw:
-        br = pw.chromium.launch(channel="chrome"); pg = br.new_page(viewport={"width": W, "height": H}, device_scale_factor=2)
-        pg.goto(page.as_uri() + "#en"); pg.add_style_tag(content=REEL_CSS); pg.evaluate("() => window.dispatchEvent(new Event('resize'))")
-        pg.wait_for_function("() => window.MF && MF.ready()", timeout=60000)
-        nat["cam"] = pg.evaluate("r => MF.camera(r)", radii[5]); br.close()
+    if base_cam: nat["cam"] = base_cam
+    else:                                                               # 날아가기 직전의 전국 시점을 페이지에서 받아 둔다
+        with sync_playwright() as pw:
+            br = pw.chromium.launch(channel="chrome"); pg = br.new_page(viewport={"width": W, "height": H}, device_scale_factor=2)
+            pg.goto(page.as_uri() + "#en"); pg.add_style_tag(content=REEL_CSS); pg.evaluate("() => window.dispatchEvent(new Event('resize'))")
+            pg.wait_for_function("() => window.MF && MF.ready()", timeout=60000)
+            nat["cam"] = pg.evaluate("r => MF.camera(r)", radii[fly]); br.close()
     return capture(name, at, total, audio, work, page)
+
+# ── 에피소드 틀: tools/episodes.json 한 항목 → 영상 + 본문 ──
+def romanize(place):
+    """한글 지명 → 로마자 (페이지와 같은 src/i18n.js 변환기를 node 로)"""
+    js = (ROOT / "src" / "i18n.js").as_posix()
+    code = f"global.window=global;require({json.dumps(js)});process.stdout.write(romPlace(process.argv[1]))"
+    r = subprocess.run(["node", "-e", code, place], capture_output=True, text=True, encoding="utf-8")
+    return r.stdout.strip() or place
+
+def episode(ep):
+    ds, reg = ep["dataset"], ep.get("region", "south")
+    suf = "" if ds == "cvs" else "_" + ds
+    sj = json.load(open(ROOT / "out" / f"sets{suf}.json", encoding="utf-8"))
+    S, rs_grid = sj["sets"]["all"], sj["r"]
+    res = S["results"][reg]; rs = res["r"]
+    cov = S["cov"][reg]
+    inv = lambda p: float(next((rs_grid[i] for i, c in enumerate(cov) if c >= p), rs))
+    r50, r90 = inv(0.5), inv(0.9)
+    toks = res["place"].split()
+    rom = romanize(" ".join(toks[1:])) if len(toks) > 1 else romanize(res["place"])
+    parts = rom.split()
+    where = ", ".join(reversed(parts)) if len(parts) <= 3 else rom          # Subi-myeon, Uljin-gun
+    dmz = res.get("dmz") or (res["kind"] == "coast" and res["lat"] > 37.85)
+    f = lambda x: f"{x:.1f}" if x >= 1 else f"{x:.2f}"
+    area = ep.get("area", "the country")
+    n = ep.get("n") or S["n"]
+    v = {"n": f"{n:,}", "r50": f(r50), "r90": f(r90), "rs": f"{rs:.1f}", "rs2": f"{rs:.2f}", "where": where, "area": area,
+         "walk": round(rs / 4.5 * 60)}                                 # 걸어서 몇 분 (시속 4.5 km)
+    say_where = f"in {where}" + (", right at the edge of the DMZ" if dmz else "")
+    lines = [
+        {"say": ep["l1"].format(**v), "cap": ep.get("c1", ep["l1"]).format(**v)},
+        {"say": "Draw a circle around every one, and let them grow.", "cap": "Draw a circle around every one. Let them grow."},
+        {"say": f"At {v['r50']} kilometers, half of {area} is covered.", "cap": f"At {v['r50']} km, half of {area} is covered."},
+        {"say": f"At {v['r90']} kilometers, ninety percent.", "cap": f"At {v['r90']} km, 90%."},
+        {"say": f"The very last spot is {say_where}.", "cap": f"The very last spot: {where}" + (", at the edge of the DMZ." if dmz else ".")},
+        {"say": f"{v['rs']} kilometers from the nearest {ep['thing']}.", "cap": f"{v['rs']} km from the nearest {ep['thing']}."},
+        {"say": ep["close"].format(**v), "cap": ep.get("close_cap", ep["close"]).format(**v)},
+    ]
+    radii = [max(0.05, r50 * 0.12), r50 * 0.35, r50, r90, min(rs * 0.9, r90 * 1.7), rs, rs, rs, rs]
+    base_cam = None
+    if ep.get("bbox"):                                                  # 고정 시점 (서울편)
+        lo0, la0, lo1, la1 = ep["bbox"]; kmx, kmy = 111.320 * 0.8090169943749475, 110.95
+        x0, x1 = (lo0 - 124.55) * kmx, (lo1 - 124.55) * kmx; y0, y1 = (38.68 - la1) * kmy, (38.68 - la0) * kmy
+        s = min(W / ((x1 - x0) * 1.08), 420 / (y1 - y0))
+        base_cam = {"s": s, "cx": (x0 + x1) / 2, "cy": (y0 + y1) / 2 + (480 - 470) / s}
+    name = ep["id"]
+    mp4 = fly_story(name, ROOT / "out" / f"mcfarthest-kr{suf}.html", res, lines, radii, ep["eye"].format(**v), ep["title"],
+                    ep.get("cov_text"), [f"{rs:.2f} km", ep["end1"].format(**v), (where + (" · at the edge of the DMZ" if dmz else ""))],
+                    fly=4, base_cam=base_cam, region=reg)
+    cap = ep["caption"].format(**v, half=f(r50)) + "\n\nInteractive map in 7 languages: desika.github.io/mcfarthest-kr\n\n" + " ".join(ep["tags"])
+    (OUT / f"{name}_caption.txt").write_text(cap, encoding="utf-8")
+    return mp4
 
 # ── 편: 담배 살 수 있는 곳에서 가장 먼 곳 ──
 def tobacco():
@@ -241,5 +296,6 @@ def brands():
     return capture("brands", at, total, audio, work)
 
 if __name__ == "__main__":
+    EPS = {e["id"]: e for e in json.load(open(ROOT / "tools" / "episodes.json", encoding="utf-8"))}
     for name in sys.argv[1:] or ["farthest"]:
-        globals()[name]()
+        episode(EPS[name]) if name in EPS else globals()[name]()

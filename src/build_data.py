@@ -12,9 +12,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from brands import SETS, brand
 import os
 DATASET = os.environ.get("MF_DATASET", "cvs")          # cvs = 편의점(기본), tobacco = 담배소매점
-STORES_CSV = "tobacco_stores.csv" if DATASET == "tobacco" else "stores.csv"
+STORES_CSV = {"cvs": "stores.csv", "tobacco": "tobacco_stores.csv"}.get(DATASET, f"chain_{DATASET}.csv")   # 체인·숙박은 chain_<이름>.csv
 SUF = "" if DATASET == "cvs" else "_" + DATASET
-if DATASET == "tobacco": SETS = [("all", "Tobacco")]
+if DATASET != "cvs": SETS = [("all", DATASET)]
 
 import numpy as np
 import shapely
