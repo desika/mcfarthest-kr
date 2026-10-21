@@ -1,128 +1,361 @@
 [
-  {
-    "id": "seoul",
-    "dataset": "cvs",
-    "region": "seoul",
-    "n": 9418,
-    "area": "Seoul",
-    "bbox": [
-      126.764,
-      37.428,
-      127.184,
-      37.702
-    ],
-    "eye": "SEOUL · {n} CONVENIENCE STORES",
-    "title": "How far can you get from a <b>convenience store</b> in Seoul?",
-    "l1": "Seoul has {n} convenience stores.",
-    "thing": "store",
-    "close": "In Seoul, you are never more than a {walk}-minute walk from one.",
-    "close_cap": "Never more than a {walk}-minute walk.",
-    "end1": "The farthest you can get from a convenience store in Seoul",
-    "caption": "How far can you get from a convenience store in Seoul?\n\nThere are {n} of them in 605 km². Grow a circle around each one: half of the city is covered at {half} km, and the last spot to go is {where}, {rs2} km from the nearest store. That's a {walk}-minute walk at most.\n\n서울 편의점 {n}곳. 서울에서 편의점과 가장 멀리 떨어질 수 있는 거리는 {rs2}km, 걸어서 {walk}분입니다.",
-    "tags": [
-      "#seoul",
-      "#서울",
-      "#편의점",
-      "#dataviz",
-      "#maps"
-    ]
-  },
-  {
-    "id": "mcd",
-    "dataset": "mcd",
-    "region": "south",
-    "eye": "SOUTH KOREA · {n} McDONALD'S",
-    "title": "Where is Korea's <b>McFarthest</b> spot?",
-    "l1": "South Korea has {n} McDonald's restaurants.",
-    "thing": "McDonald's",
-    "close": "This is Korea's McFarthest spot.",
-    "end1": "Korea's McFarthest spot: the farthest you can get from a McDonald's",
-    "caption": "Where is South Korea's McFarthest spot?\n\nThe McFarthest Spot is the point farthest from any McDonald's. In the US it is about 172 km away. Korea has {n} McDonald's: grow a circle around each one and the last spot to be covered is {where}, {rs2} km from the nearest restaurant. Half of the country is within {half} km of one.\n\n한국 맥도날드 {n}곳. 맥도날드에서 가장 멀리 떨어질 수 있는 곳은 {rs2}km입니다.",
-    "tags": [
-      "#mcdonalds",
-      "#mcfarthest",
-      "#southkorea",
-      "#dataviz",
-      "#maps"
-    ]
-  },
-  {
-    "id": "paik",
-    "dataset": "paik",
-    "region": "south",
-    "eye": "SOUTH KOREA · {n} PAIK JONG-WON RESTAURANTS",
-    "title": "How far can you get from <b>Paik Jong-won</b>?",
-    "l1": "Chef Paik Jong-won's brands run {n} restaurants in South Korea.",
-    "c1": "Paik Jong-won's brands: {n} restaurants.",
-    "thing": "Paik restaurant",
-    "close": "That's how far his food empire reaches.",
-    "end1": "The farthest you can get from a Paik Jong-won restaurant",
-    "caption": "How far can you get from a Paik Jong-won restaurant?\n\nPaik's Coffee, Hong Kong Banjeom, Yeokjeon Udon, Paik's Pizza, Rolling Pasta and more: {n} restaurants in South Korea. Half of the country is within {half} km of one, and the farthest spot is {where}, {rs2} km away.\n\n빽다방·홍콩반점·역전우동·빽보이피자 등 백종원 브랜드 {n}곳. 가장 멀리 떨어질 수 있는 곳은 {rs2}km입니다.",
-    "tags": [
-      "#백종원",
-      "#빽다방",
-      "#southkorea",
-      "#dataviz",
-      "#maps"
-    ]
-  },
-  {
-    "id": "kimbap",
-    "dataset": "kimbap",
-    "region": "south",
-    "eye": "SOUTH KOREA · {n} KIMBAP HEAVEN",
-    "title": "How far can you get from <b>Kimbap Heaven</b>?",
-    "l1": "Kimbap Heaven has {n} restaurants across South Korea.",
-    "thing": "Kimbap Heaven",
-    "close": "Out there, the nearest kimbap is a long drive away.",
-    "end1": "The farthest you can get from a Kimbap Heaven",
-    "caption": "How far can you get from a Kimbap Heaven?\n\nKorea's everyday snack chain has {n} restaurants. Half of the country is within {half} km of one. The last spot to be covered is {where}, {rs2} km from the nearest one.\n\n김밥천국 {n}곳. 김밥천국에서 가장 멀리 떨어질 수 있는 곳은 {rs2}km입니다.",
-    "tags": [
-      "#김밥천국",
-      "#kimbap",
-      "#southkorea",
-      "#dataviz",
-      "#maps"
-    ]
-  },
-  {
-    "id": "hotel",
-    "dataset": "hotel",
-    "region": "south",
-    "eye": "SOUTH KOREA · {n} HOTELS AND RESORTS",
-    "title": "How far can you get from a <b>hotel</b>?",
-    "l1": "South Korea has {n} hotels and resorts.",
-    "thing": "hotel",
-    "close": "Book ahead.",
-    "end1": "The farthest you can get from a hotel in South Korea",
-    "caption": "How far can you get from a hotel in South Korea?\n\n{n} hotels and resorts. Half of the country is within {half} km of one, and the farthest spot is {where}, {rs2} km away.\n\n한국 호텔·리조트 {n}곳. 호텔에서 가장 멀리 떨어질 수 있는 곳은 {rs2}km입니다.",
-    "tags": [
-      "#hotel",
-      "#travelkorea",
-      "#southkorea",
-      "#dataviz",
-      "#maps"
-    ]
-  },
-  {
-    "id": "motel",
-    "dataset": "motel",
-    "region": "south",
-    "eye": "SOUTH KOREA · {n} MOTELS",
-    "title": "How far can you get from a <b>motel</b>?",
-    "l1": "South Korea has {n} motels, almost ten times the number of hotels.",
-    "c1": "South Korea has {n} motels. Almost 10× the hotels.",
-    "thing": "motel",
-    "close": "That's closer than convenience stores. In Korea, motels reach farther than convenience stores do.",
-    "end1": "The farthest you can get from a motel in South Korea",
-    "caption": "How far can you get from a motel in South Korea?\n\n{n} motels and inns, almost ten times the number of hotels. Half of the country is within {half} km of one, and the farthest spot is {where}, {rs2} km away.\n\nThat's closer than the convenience store answer, 19.8 km. In Korea, motels cover the country better than convenience stores do.\n\n한국 모텔·여관 {n}곳. 모텔에서 가장 먼 곳은 {rs2}km로, 편의점(19.8km)보다 가깝습니다.",
-    "tags": [
-      "#motel",
-      "#travelkorea",
-      "#southkorea",
-      "#dataviz",
-      "#maps"
-    ],
-    "close_cap": "Closer than convenience stores (19.8 km). Motels win."
-  }
+ {
+  "id": "hotel",
+  "dataset": "hotel",
+  "region": "south",
+  "eye": "SOUTH KOREA · {n} HOTELS AND RESORTS",
+  "title": "How far can you get from a <b>hotel</b>?",
+  "l1": "South Korea has {n} hotels and resorts.",
+  "thing": "hotel",
+  "close": "Pack a tent.",
+  "end1": "The farthest you can get from a hotel in South Korea",
+  "caption": "How far can you get from a hotel in South Korea?\n\n{n} hotels and resorts. Half of the country is within {half} km of one, and the farthest spot is {where}, {rs2} km away.\n\n한국 호텔·리조트 {n}곳. 호텔에서 가장 멀리 떨어질 수 있는 곳은 {rs2}km입니다.",
+  "tags": [
+   "#korea",
+   "#koreatravel",
+   "#travelkorea",
+   "#jeju",
+   "#hotel",
+   "#hotels",
+   "#dataviz",
+   "#한국여행"
+  ],
+  "theme": "tesla",
+  "voice": "en-GB-RyanNeural",
+  "l2": "Jeju has the most, two hundred and sixty-six on a single island.",
+  "c2": "Jeju has the most: 266 on one island.",
+  "cover": [
+   "SOUTH KOREA",
+   "{rs}<i>km</i>",
+   "from the nearest hotel",
+   "the farthest point in the country"
+  ],
+  "story": [
+   {
+    "say": "Uiseong is garlic country. Fields, orchards, and almost no visitors staying the night.",
+    "cap": "Uiseong is garlic country. Fields, orchards, almost no overnight visitors."
+   },
+   {
+    "say": "My take? It is also one of the oldest counties in Korea, often ranked first on lists of places at risk of disappearing. No crowds, no hotels.",
+    "cap": "My take: one of Korea's oldest counties, often ranked #1 at risk of disappearing. No crowds, no hotels."
+   }
+  ]
+ },
+ {
+  "id": "motel",
+  "type": "rank",
+  "dataset": "motel",
+  "theme": "chanel",
+  "voice": "en-US-AndrewNeural",
+  "eye": "KOREA, EXPLAINED · {n} MOTELS",
+  "title": "What is a <b>Korean motel</b>?",
+  "cover": [
+   "KOREA, EXPLAINED",
+   "{n}",
+   "love hotels",
+   "and the neighborhood with the most"
+  ],
+  "lines": [
+   {
+    "say": "In Korea, a motel is not a cheap roadside stop.",
+    "cap": "In Korea, a motel is not a roadside stop."
+   },
+   {
+    "say": "It's a love hotel. Themed rooms, giant screens, and curtains over the parking lot, so nobody sees your car.",
+    "cap": "It's a love hotel. Themed rooms, giant screens, curtains over the parking lot."
+   },
+   {
+    "say": "You can book a daesil, a few hours of rest, or stay the night.",
+    "cap": "Book a daesil for a few hours, or stay the night."
+   },
+   {
+    "say": "Many come with free snacks, a massage chair, and a gaming PC. Check-in is often contactless.",
+    "cap": "Free snacks, massage chairs, gaming PCs. Contactless check-in."
+   },
+   {
+    "say": "South Korea has {n} of them. Almost ten for every hotel.",
+    "cap": "{n} motels. Almost 10 for every hotel."
+   },
+   {
+    "say": "The most motel-packed neighborhood is {top}, in {top_b}, with {top_n}.",
+    "cap": "#1: {top}, {top_b}. {top_n} motels."
+   },
+   {
+    "say": "Then {second}, and {third}.",
+    "cap": "Then {second} and {third}."
+   },
+   {
+    "say": "My guess? Gumi is a factory town, home to big Samsung and LG plants, and Wonpyeong-dong is the old downtown right by the train station.",
+    "cap": "My guess: Gumi is a factory town, Samsung and LG plants. Wonpyeong-dong is the old downtown by the station."
+   },
+   {
+    "say": "And the twist: in Korea, you can get farther from a convenience store than from a motel.",
+    "cap": "Twist: you can get farther from a convenience store than from a motel."
+   }
+  ],
+  "acts": [
+   "nat",
+   "nat",
+   "nat",
+   "nat",
+   "nat",
+   "fly",
+   "rank",
+   "stay",
+   "stay"
+  ],
+  "r_nat": [
+   0.5,
+   2.0
+  ],
+  "r_local": 0.1,
+  "end": [
+   "{n}",
+   "motels in South Korea, almost ten for every hotel",
+   "#1 {top}, {top_b} · {top_n} motels"
+  ],
+  "caption": "What is a Korean motel?\n\nNot a roadside stop. It's a love hotel: themed rooms, big screens, curtains over the parking lot, and you can book a daesil for a few hours or stay the night.\n\nSouth Korea has {n} motels, almost ten for every hotel. The most motel-packed neighborhood is {top}, {top_b}, with {top_n}. Then {second} and {third}.\n\nAnd the farthest you can get from a motel is {rs} km, less than from a convenience store (19.8 km).\n\n한국 모텔 {n}곳. 모텔이 가장 많은 동네는 구미 원평동 {top_n}곳.",
+  "tags": [
+   "#korea",
+   "#lovehotel",
+   "#koreanculture",
+   "#koreatravel",
+   "#motel",
+   "#dataviz",
+   "#maps",
+   "#모텔"
+  ]
+ },
+ {
+  "id": "hagwon",
+  "type": "tour",
+  "dataset": "hagwon",
+  "theme": "autumn",
+  "voice": "en-US-AvaNeural",
+  "eye": "KOREA, EXPLAINED · {n} CRAM SCHOOLS",
+  "title": "Where are Korea's <b>hagwons</b>?",
+  "cover": [
+   "SEOUL → DAEGU → BUSAN?",
+   "{s0_n}",
+   "cram schools in one neighborhood",
+   "but watch Busan"
+  ],
+  "stops": [
+   {
+    "sido": "서울",
+    "sgg": "강남구",
+    "dong": "대치4동",
+    "label": "Gangnam, Seoul"
+   },
+   {
+    "sido": "경기",
+    "sgg": "남양주시",
+    "dong": "다산1동",
+    "label": "Namyangju, Gyeonggi"
+   },
+   {
+    "sido": "대구",
+    "sgg": "수성구",
+    "dong": "범어4동",
+    "label": "Suseong, Daegu"
+   },
+   {
+    "sido": "부산",
+    "sgg": "강서구",
+    "dong": "명지1동",
+    "label": "Gangseo, Busan"
+   }
+  ],
+  "lines": [
+   {
+    "say": "Korea has {n} hagwons, cram schools open till ten at night.",
+    "cap": "{n} hagwons. Open till 10 pm."
+   },
+   {
+    "say": "Seoul wins, obviously. {s0}: {s0_n} in one neighborhood.",
+    "cap": "Seoul. {s0}: {s0_n}."
+   },
+   {
+    "say": "Gyeonggi? {s1}, {s1_n}.",
+    "cap": "Gyeonggi. {s1}: {s1_n}."
+   },
+   {
+    "say": "Outside the capital, Daegu. {s2}, {s2_n}.",
+    "cap": "Daegu. {s2}: {s2_n}."
+   },
+   {
+    "say": "And Busan? Only seventh.",
+    "cap": "Busan? Only 7th."
+   },
+   {
+    "say": "But its hagwon capital isn't Haeundae. It's {s3}, with {s3_n}.",
+    "cap": "Not Haeundae. {s3}: {s3_n}."
+   },
+   {
+    "say": "My take? Myeongji is a new town by the river, full of young families. Where young parents move, hagwons follow.",
+    "cap": "My take: Myeongji is a new town full of young families. Where young parents move, hagwons follow."
+   },
+   {
+    "say": "Busan, we see you.",
+    "cap": "Busan, we see you."
+   }
+  ],
+  "acts": [
+   "nat",
+   "stop0",
+   "stop1",
+   "stop2",
+   "nat",
+   "stop3",
+   "stay",
+   "stay"
+  ],
+  "r_nat": [
+   0.4,
+   1.6
+  ],
+  "r_local": 0.06,
+  "end": [
+   "BUSAN",
+   "{s3} · {s3_n} hagwons",
+   "Seoul {s0_n} · Gyeonggi {s1_n} · Daegu {s2_n}"
+  ],
+  "caption": "Seoul → Gyeonggi → Daegu → ... Busan?\n\nKorea has {n} hagwons, private cram schools that run until 10 pm. {s0} in Gangnam, Seoul has {s0_n} in a single neighborhood. In Gyeonggi, {s1} has {s1_n}. Outside the capital region, Daegu's {s2} has {s2_n}.\n\nBusan is only 7th by city, but its hagwon capital is not Haeundae. It is {s3} in Gangseo-gu, a new town on the Nakdong delta, with {s3_n}.\n\nBusan, where did you go to hagwon?\n\n한국 입시·교과 학원 {n}곳. 서울 대치4동 {s0_n} → 경기 다산1동 {s1_n} → 대구 범어4동 {s2_n} → 그리고 부산은? 해운대가 아니라 명지1동 {s3_n}.",
+  "tags": [
+   "#busan",
+   "#부산",
+   "#부산맘",
+   "#명지",
+   "#hagwon",
+   "#학원",
+   "#korea",
+   "#koreaneducation",
+   "#daegu",
+   "#dataviz"
+  ]
+ },
+ {
+  "id": "seoul",
+  "dataset": "cvs",
+  "region": "seoul",
+  "n": 9418,
+  "area": "Seoul",
+  "bbox": [
+   126.764,
+   37.428,
+   127.184,
+   37.702
+  ],
+  "eye": "SEOUL · {n} CONVENIENCE STORES",
+  "title": "How far can you get from a <b>convenience store</b> in Seoul?",
+  "l1": "Seoul has {n} convenience stores.",
+  "thing": "store",
+  "close": "Everywhere else in Seoul, you are never more than a {walk}-minute walk from a store.",
+  "close_cap": "Everywhere else: never more than a {walk}-minute walk.",
+  "end1": "The farthest you can get from a convenience store in Seoul",
+  "caption": "How far can you get from a convenience store in Seoul?\n\nThere are {n} of them in 605 km². Grow a circle around each one: half of the city is covered at {half} km, and the last spot to go is {where}, {rs2} km from the nearest store.\n\nDaehak-dong means \"University Town\": Seoul National University is right there, and one of the three nearest stores is on its campus. The spot itself is on Gwanaksan mountain. For decades the streets below were Sillim's gosichon, where tens of thousands studied for the bar exam in one-room cells, until law schools took over and the old exam ended in 2017.\n\n서울 편의점 {n}곳. 서울에서 편의점에서 가장 먼 곳은 관악구 대학동, 관악산 자락 {rs2}km. 서울대 바로 옆, 옛 신림동 고시촌.",
+  "tags": [
+   "#seoul",
+   "#서울",
+   "#seoulnationaluniversity",
+   "#서울대",
+   "#신림동",
+   "#고시촌",
+   "#koreanculture",
+   "#dataviz",
+   "#편의점"
+  ],
+  "theme": "dark",
+  "voice": "en-US-BrianNeural",
+  "cover": [
+   "SEOUL",
+   "{rs}<i>km</i>",
+   "the farthest you can get from a convenience store",
+   "next to Korea's top university"
+  ],
+  "story": [
+   {
+    "say": "That's Daehak-dong, literally University Town. Seoul National University, the top university in Korea, is right here.",
+    "cap": "Daehak-dong, \"University Town\". Seoul National University, Korea's top school, is right here."
+   },
+   {
+    "say": "In fact, one of the three nearest stores is on the university campus. The spot itself is up on Gwanaksan mountain.",
+    "cap": "One of the three nearest stores is on campus. The spot itself is on Gwanaksan mountain."
+   },
+   {
+    "say": "For decades, the streets below were Sillim's gosichon, the exam village.",
+    "cap": "For decades, the streets below were Sillim's gosichon, the exam village."
+   },
+   {
+    "say": "Tens of thousands lived in tiny one-room cells, studying for one thing: the bar exam.",
+    "cap": "Tens of thousands in tiny rooms, studying for one thing: the bar exam."
+   },
+   {
+    "say": "Then Korea moved to law schools, and in 2017 the old bar exam ended. The village slowly emptied out.",
+    "cap": "Law schools took over. The old bar exam ended in 2017. The village emptied out."
+   },
+   {
+    "say": "My take? Seoul's last gap is not a poor neighborhood. It's a mountain, sitting between the country's top university and a village built on one exam.",
+    "cap": "My take: Seoul's last gap isn't a poor area. It's a mountain between the top university and a village built on one exam."
+   }
+  ]
+ },
+ {
+  "id": "mcd",
+  "dataset": "mcd",
+  "region": "south",
+  "eye": "SOUTH KOREA · {n} McDONALD'S",
+  "title": "Where is Korea's <b>McFarthest</b> spot?",
+  "l1": "South Korea has {n} McDonald's restaurants.",
+  "thing": "McDonald's",
+  "close": "This is Korea's McFarthest spot.",
+  "end1": "Korea's McFarthest spot: the farthest you can get from a McDonald's",
+  "caption": "Where is South Korea's McFarthest spot?\n\nThe McFarthest Spot is the point farthest from any McDonald's. In the US it is about 172 km away. Korea has {n} McDonald's: grow a circle around each one and the last spot to be covered is {where}, {rs2} km from the nearest restaurant. Half of the country is within {half} km of one.\n\n한국 맥도날드 {n}곳. 맥도날드에서 가장 멀리 떨어질 수 있는 곳은 {rs2}km입니다.",
+  "tags": [
+   "#mcdonalds",
+   "#mcfarthest",
+   "#southkorea",
+   "#dataviz",
+   "#maps"
+  ]
+ },
+ {
+  "id": "paik",
+  "dataset": "paik",
+  "region": "south",
+  "eye": "SOUTH KOREA · {n} PAIK JONG-WON RESTAURANTS",
+  "title": "How far can you get from <b>Paik Jong-won</b>?",
+  "l1": "Chef Paik Jong-won's brands run {n} restaurants in South Korea.",
+  "c1": "Paik Jong-won's brands: {n} restaurants.",
+  "thing": "Paik restaurant",
+  "close": "That's how far his food empire reaches.",
+  "end1": "The farthest you can get from a Paik Jong-won restaurant",
+  "caption": "How far can you get from a Paik Jong-won restaurant?\n\nPaik's Coffee, Hong Kong Banjeom, Yeokjeon Udon, Paik's Pizza, Rolling Pasta and more: {n} restaurants in South Korea. Half of the country is within {half} km of one, and the farthest spot is {where}, {rs2} km away.\n\n빽다방·홍콩반점·역전우동·빽보이피자 등 백종원 브랜드 {n}곳. 가장 멀리 떨어질 수 있는 곳은 {rs2}km입니다.",
+  "tags": [
+   "#백종원",
+   "#빽다방",
+   "#southkorea",
+   "#dataviz",
+   "#maps"
+  ]
+ },
+ {
+  "id": "kimbap",
+  "dataset": "kimbap",
+  "region": "south",
+  "eye": "SOUTH KOREA · {n} KIMBAP HEAVEN",
+  "title": "How far can you get from <b>Kimbap Heaven</b>?",
+  "l1": "Kimbap Heaven has {n} restaurants across South Korea.",
+  "thing": "Kimbap Heaven",
+  "close": "Out there, the nearest kimbap is a long drive away.",
+  "end1": "The farthest you can get from a Kimbap Heaven",
+  "caption": "How far can you get from a Kimbap Heaven?\n\nKorea's everyday snack chain has {n} restaurants. Half of the country is within {half} km of one. The last spot to be covered is {where}, {rs2} km from the nearest one.\n\n김밥천국 {n}곳. 김밥천국에서 가장 멀리 떨어질 수 있는 곳은 {rs2}km입니다.",
+  "tags": [
+   "#김밥천국",
+   "#kimbap",
+   "#southkorea",
+   "#dataviz",
+   "#maps"
+  ]
+ }
 ]

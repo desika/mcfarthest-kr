@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # 인스타 릴스 올리기 — 서버(nfc-amd-server)에서 실행
-#   bash post_reel.sh <영상 공개 URL> <본문 파일>
+#   bash post_reel.sh <영상 공개 URL> <본문 파일> [표지 이미지 공개 URL]
 # 토큰·계정은 abc-news-learner 의 .env (IG_USER_ID, FB_PAGE_TOKEN) 를 그대로 쓴다.
 #   ① 컨테이너 (media_type=REELS, video_url)  ② 메타가 영상을 다 받을 때까지 대기(FINISHED)  ③ 발행
 # 인스타 게시물은 API 로 지울 수 없다. 사람이 확인한 영상만 넣을 것.
 set -u
-VIDEO_URL="${1:?영상 URL}"; CAPTION_FILE="${2:?본문 파일}"
+VIDEO_URL="${1:?영상 URL}"; CAPTION_FILE="${2:?본문 파일}"; COVER_URL="${3:-}"
 ENV=/home/ubuntu/abc-news-learner/.env
 set -a; . "$ENV"; set +a
 API="https://graph.facebook.com/v21.0"
@@ -15,10 +15,15 @@ fail() { echo "FAIL: $1"; notify "릴스 게시 실패: $1"; exit 1; }
 [ -n "${IG_USER_ID:-}" ] && [ -n "${FB_PAGE_TOKEN:-}" ] || fail ".env 에 IG_USER_ID / FB_PAGE_TOKEN 없음"
 CODE=$(curl -s -o /dev/null -w "%{http_code}" -I "$VIDEO_URL"); [ "$CODE" = "200" ] || fail "영상 URL 접근 불가 ($CODE)"
 CAPTION=$(cat "$CAPTION_FILE")
+COVER=()
+if [ -n "$COVER_URL" ]; then
+  CODE=$(curl -s -o /dev/null -w "%{http_code}" -I "$COVER_URL"); [ "$CODE" = "200" ] || fail "표지 URL 접근 불가 ($CODE)"
+  COVER=(--data-urlencode "cover_url=${COVER_URL}")
+fi
 
 RESP=$(curl -sS -X POST "$API/${IG_USER_ID}/media" \
   --data-urlencode "media_type=REELS" --data-urlencode "video_url=${VIDEO_URL}" \
-  --data-urlencode "caption=${CAPTION}" --data-urlencode "share_to_feed=true" \
+  --data-urlencode "caption=${CAPTION}" --data-urlencode "share_to_feed=true" "${COVER[@]}" \
   --data-urlencode "access_token=${FB_PAGE_TOKEN}")
 CID=$(echo "$RESP" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("id") or "")')
 [ -n "$CID" ] || fail "컨테이너 생성 — $RESP"

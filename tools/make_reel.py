@@ -26,16 +26,28 @@ VOICE, FPS, W, H = "en-US-AvaNeural", 30, 540, 960     # CSS 크기, 2배로 찍
 LEAD, GAP, TAIL = 0.5, 0.35, 3.2                          # 시작 여백 · 문장 사이 · 끝 화면
 
 # ── 음성 ──
-async def _tts(text, path):
-    await edge_tts.Communicate(text, VOICE, rate="-4%").save(str(path))
+# 영어 목소리가 한국 지명을 철자대로 읽지 않게 소리 나는 대로 바꿔 읽힘 (자막은 그대로)
+PRON = {"myeon": "myun", "gun": "goon", "gu": "goo", "si": "shee", "eup": "up", "ri": "ree", "daesil": "deh-shil", "Uiseong": "Wee-sung", "Chunsan": "Choon-sahn", "Daehak": "Deh-hahk", "Sillim": "Shil-lim", "gosichon": "go-shee-chon", "Gosichon": "Go-shee-chon",
+        "Gwanaksan": "Gwah-nahk-sahn", "Gwacheon": "Gwah-chun", "Anyang": "Ahn-yahng", "Gumi": "Goo-mee", "Wonpyeong": "Won-pyung", "hagwons": "hahg-wons", "hagwon": "hahg-won", "Daechi": "Deh-chee", "Gyeonggi": "Gyung-gee", "Dasan": "Dah-sahn",
+        "Daegu": "Deh-goo", "Beomeo": "Bum-uh", "Busan": "Boo-sahn", "Haeundae": "Heh-oon-deh", "Myeongji": "Myung-jee",
+        "Gangnam": "Gahng-nahm", "Namyangju": "Nahm-yahng-joo", "Suseong": "Soo-sung", "Gangseo": "Gahng-suh", "Uljin": "Ool-jin",
+        "Jeju": "Jeh-joo", "Gwanak": "Gwah-nahk", "Uiseong": "Wee-sung", "Yeongyang": "Yung-yahng", "Sinan": "Shin-ahn",
+        "Hwacheon": "Hwah-chun", "Gyeongbuk": "Gyung-book"}
+SINO = "il i sam sah oh yook chil pal goo".split()
+def speakable(text):
+    for k in sorted(SAY, key=len, reverse=True): text = text.replace(k, SAY[k])
+    text = re.sub(r"(\d)-dong", lambda m: " " + SINO[int(m.group(1)) - 1] + "-dong", text)
+    return re.sub(r"[A-Za-z]+", lambda m: PRON.get(m.group(0), m.group(0)), text)
+async def _tts(text, path, voice=None):
+    await edge_tts.Communicate(speakable(text), voice or VOICE, rate="-4%").save(str(path))
 def duration(path):
     r = subprocess.run([FF, "-i", str(path)], capture_output=True, text=True, encoding="utf-8", errors="replace")
     h, m, s = re.search(r"Duration: (\d+):(\d+):([\d.]+)", r.stderr).groups()
     return int(h) * 3600 + int(m) * 60 + float(s)
-def narrate(lines, work):
-    clips, t = [], LEAD
+def narrate(lines, work, voice=None, lead=None):
+    clips, t = [], (lead if lead is not None else LEAD)
     for i, ln in enumerate(lines):
-        p = work / f"v{i:02d}.mp3"; asyncio.run(_tts(ln["say"], p)); d = duration(p)
+        p = work / f"v{i:02d}.mp3"; asyncio.run(_tts(ln["say"], p, voice)); d = duration(p)
         clips.append({**ln, "file": p, "t0": t, "t1": t + d}); t += d + GAP
     total = t - GAP + TAIL
     # 문장들을 시각에 맞춰 한 트랙으로
@@ -72,11 +84,93 @@ html, body { overflow: hidden !important; }
 #reel .end .t1 { font: 700 26px/1.25 "Noto Sans", sans-serif; }
 #reel .end .t2 { font: 500 17px/1.4 "Noto Sans", sans-serif; color: #84969b; margin-top: 18px; }
 #reel .end .url { font: 600 17px "Space Grotesk", sans-serif; color: #e6eef0; }
+/* 표지: 첫 1.4초. 큰 숫자 하나 + 한 줄 */
+#reel .cover { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 12px; padding: 0 40px 120px; opacity: 0;
+  background: radial-gradient(120% 70% at 50% 45%, #080c0e99 0%, #080c0ef2 70%); }
+#reel .cover .k { font: 600 14px "Space Grotesk", sans-serif; letter-spacing: .28em; color: #5fe3c6; }
+#reel .cover .big { font: 700 132px/0.92 "Space Grotesk", sans-serif; letter-spacing: -.03em; background: linear-gradient(90deg, #3d8bff, #5fe3c6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+#reel .cover .t { font: 800 38px/1.1 "Noto Sans", sans-serif; }
+#reel .cover .s { font: 500 18px/1.35 "Noto Sans", sans-serif; color: #b9c6c9; margin-top: 6px; }
+/* 순위 카드 */
+#reel .rank { position: absolute; left: 24px; width: 268px; top: 252px; display: flex; flex-direction: column; gap: 7px; opacity: 0; }
+#reel .rank .row { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; padding: 8px 12px; border-radius: 10px; background: #080c0ed9; border: 1px solid #ffffff1f; }
+#reel .rank .row .no { font: 700 18px "Space Grotesk", sans-serif; color: #5fe3c6; }
+#reel .rank .row .nm { font: 700 17px "Noto Sans", sans-serif; }
+#reel .rank .row .nm span { display: block; font: 500 12px "Noto Sans", sans-serif; color: #9fb0b4; }
+#reel .rank .row .v { font: 700 22px "Space Grotesk", sans-serif; }
+#reel .rank .row .bar { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: linear-gradient(90deg, #3d8bff, #5fe3c6); }
+
+/* ── 샤넬: 흑백 · 세리프 · 넓은 자간 ── */
+body.th-chanel .map canvas { filter: grayscale(1) contrast(1.3) brightness(1.08); }
+body.th-chanel #reel { color: #f4f2ee; }
+body.th-chanel #reel .band-t { background: linear-gradient(#000 0%, #000000ee 72%, #0000 100%); }
+body.th-chanel #reel .band-b { background: linear-gradient(#0000 0%, #000000dd 45%, #000 100%); }
+body.th-chanel #reel .eyebrow { font: 500 11px "Montserrat", sans-serif; letter-spacing: .46em; color: #c9c6bf; }
+body.th-chanel #reel .title { font: 600 36px/1.08 "Playfair Display", serif; }
+body.th-chanel #reel .title b { background: none; -webkit-text-fill-color: #fff; color: #fff; font-style: italic; font-weight: 600; }
+body.th-chanel #reel .rad { font: 500 56px/1 "Playfair Display", serif; color: #fff; }
+body.th-chanel #reel .rad small, body.th-chanel #reel .cov { font-family: "Montserrat", sans-serif; color: #d8d5ce; }
+body.th-chanel #reel .cap { font: 500 24px/1.32 "Montserrat", sans-serif; letter-spacing: .01em; }
+body.th-chanel #reel .cover { background: radial-gradient(120% 70% at 50% 45%, #00000099 0%, #000000f5 70%); align-items: center; text-align: center; }
+body.th-chanel #reel .cover .k { font: 500 12px "Montserrat", sans-serif; letter-spacing: .6em; color: #d8d5ce; border-top: 1px solid #fff6; border-bottom: 1px solid #fff6; padding: 10px 0 10px .6em; }
+body.th-chanel #reel .cover .big { font: 500 150px/0.95 "Playfair Display", serif; background: none; -webkit-text-fill-color: #fff; color: #fff; letter-spacing: -.02em; }
+body.th-chanel #reel .cover .t { font: italic 600 40px/1.1 "Playfair Display", serif; }
+body.th-chanel #reel .cover .s { font: 500 13px "Montserrat", sans-serif; letter-spacing: .38em; text-transform: uppercase; color: #bdbab3; }
+body.th-chanel #reel .rank .row { background: #000000e0; border-color: #ffffff33; border-radius: 0; }
+body.th-chanel #reel .rank .row .no, body.th-chanel #reel .rank .row .v { font-family: "Playfair Display", serif; color: #fff; }
+body.th-chanel #reel .rank .row .nm { font-family: "Montserrat", sans-serif; font-weight: 600; letter-spacing: .02em; }
+body.th-chanel #reel .rank .row .bar { background: #fff; height: 2px; }
+body.th-chanel #reel .end { background: #000000f2; }
+body.th-chanel #reel .end .big { font: 500 96px/1 "Playfair Display", serif; color: #fff; }
+body.th-chanel #reel .end .t1 { font: italic 600 26px/1.25 "Playfair Display", serif; }
+
+/* ── 가을: 단풍 주황 · 호박 ── */
+body.th-autumn .map canvas { filter: hue-rotate(218deg) saturate(1.7) brightness(1.02); }
+body.th-autumn #reel .band-t { background: linear-gradient(#120a05fa 0%, #120a05f0 72%, #120a0500 100%); }
+body.th-autumn #reel .band-b { background: linear-gradient(#120a0500 0%, #120a05d9 45%, #120a05f7 100%); }
+body.th-autumn #reel .eyebrow { color: #d9a27a; }
+body.th-autumn #reel .title b, body.th-autumn #reel .cover .big { background: linear-gradient(90deg, #ff5f3a, #ffc14d); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+body.th-autumn #reel .cover { background: radial-gradient(120% 70% at 50% 45%, #120a0599 0%, #120a05f5 70%); }
+body.th-autumn #reel .cover .k, body.th-autumn #reel .rank .row .no, body.th-autumn #reel .tag { color: #ffb347; }
+body.th-autumn #reel .rank .row { background: #1a0e07e0; border-color: #ffb34733; }
+body.th-autumn #reel .rank .row .bar { background: linear-gradient(90deg, #ff5f3a, #ffc14d); }
+body.th-autumn #reel .end { background: #120a05f0; }
+body.th-autumn #reel .end .big { color: #ffb347; }
+
+/* ── 테슬라: 검정 · 가는 산세리프 · 빨강 하나 ── */
+body.th-tesla .map canvas { filter: hue-rotate(186deg) saturate(1.6) brightness(.92); }
+body.th-tesla #reel { font-family: "Inter", sans-serif; }
+body.th-tesla #reel .band-t { background: linear-gradient(#000 0%, #000000ee 72%, #0000 100%); }
+body.th-tesla #reel .band-b { background: linear-gradient(#0000 0%, #000000dd 45%, #000 100%); }
+body.th-tesla #reel .eyebrow { font: 500 11px "Inter", sans-serif; letter-spacing: .34em; color: #8d8d8d; }
+body.th-tesla #reel .title { font: 300 34px/1.12 "Inter", sans-serif; letter-spacing: -.015em; }
+body.th-tesla #reel .title b { background: none; -webkit-text-fill-color: #e82127; color: #e82127; font-weight: 600; }
+body.th-tesla #reel .rad { font: 200 68px/1 "Inter", sans-serif; color: #fff; letter-spacing: -.03em; }
+body.th-tesla #reel .rad small { font-family: "Inter", sans-serif; font-weight: 300; }
+body.th-tesla #reel .cov { font-family: "Inter", sans-serif; font-weight: 300; }
+body.th-tesla #reel .cov b { font-family: "Inter", sans-serif; font-weight: 600; color: #e82127; }
+body.th-tesla #reel .cap { font: 400 25px/1.3 "Inter", sans-serif; }
+body.th-tesla #reel .tag { font-family: "Inter", sans-serif; color: #e82127; }
+body.th-tesla #reel .cover { background: radial-gradient(120% 70% at 50% 45%, #00000080 0%, #000000f5 70%); }
+body.th-tesla #reel .cover .k { font: 500 12px "Inter", sans-serif; letter-spacing: .42em; color: #e82127; }
+body.th-tesla #reel .cover .big { font: 200 168px/0.9 "Inter", sans-serif; background: none; -webkit-text-fill-color: #fff; color: #fff; letter-spacing: -.06em; }
+body.th-tesla #reel .cover .big i { font-style: normal; font-size: .3em; color: #e82127; -webkit-text-fill-color: #e82127; letter-spacing: 0; margin-left: 8px; }
+body.th-tesla #reel .cover .t { font: 300 34px/1.12 "Inter", sans-serif; }
+body.th-tesla #reel .cover .s { font: 400 14px "Inter", sans-serif; letter-spacing: .3em; text-transform: uppercase; color: #8d8d8d; }
+body.th-tesla #reel .rank .row { background: #000000e6; border-color: #ffffff1a; border-radius: 4px; }
+body.th-tesla #reel .rank .row .no { color: #e82127; font-family: "Inter", sans-serif; }
+body.th-tesla #reel .rank .row .v { font-family: "Inter", sans-serif; font-weight: 300; }
+body.th-tesla #reel .rank .row .bar { background: #e82127; height: 2px; }
+body.th-tesla #reel .end { background: #000000f2; }
+body.th-tesla #reel .end .big { font: 200 104px/1 "Inter", sans-serif; color: #e82127; letter-spacing: -.04em; }
+body.th-tesla #reel .end .t1 { font: 300 26px/1.25 "Inter", sans-serif; }
 """
 REEL_HTML = """<div id="reel"><div class="band-t"></div><div class="band-b"></div>
 <div class="eyebrow" id="r-eye"></div><div class="title" id="r-title"></div>
 <div class="rad" id="r-rad"></div><div class="cov" id="r-cov"></div><div class="tag" id="r-tag"></div>
 <svg id="r-svg" viewBox="0 0 540 960"></svg><div class="cap" id="r-cap"></div>
+<div class="rank" id="r-rank"></div>
+<div class="cover" id="r-cover"><div class="k" id="c-k"></div><div class="big" id="c-big"></div><div class="t" id="c-t"></div><div class="s" id="c-s"></div></div>
 <div class="end" id="r-end"><div class="big" id="e-big"></div><div class="t1" id="e-t1"></div><div class="t2" id="e-t2"></div><div class="url">desika.github.io/mcfarthest-kr</div></div></div>"""
 FRAME_JS = """(p) => {
   const st = MF.st;
@@ -90,7 +184,7 @@ FRAME_JS = """(p) => {
   const c = Math.min(100, MF.cov(r) * 100);
   $("r-cov").innerHTML = p.showRad ? `<b>${c >= 99.95 && r < MF.res().r ? "99.9" : c.toFixed(1)}%</b> ${p.covText || "of the land has a store this close"}` : "";
   $("r-tag").textContent = p.tag || "";
-  $("r-cap").textContent = p.cap || "";
+  $("r-cap").textContent = p.cap || ""; $("r-cap").style.top = (p.capTop || 676) + "px";
   // 결정적인 점포들의 원 (확대 장면에서만)
   let svg = "";
   if (p.keys && st.cam) {
@@ -103,11 +197,28 @@ FRAME_JS = """(p) => {
     }
   }
   $("r-svg").innerHTML = svg;
+  const th = "th-" + (p.theme || "dark"); if (document.body.dataset.th !== th) { document.body.classList.remove("th-dark", "th-chanel", "th-tesla", "th-autumn"); document.body.classList.add(th); document.body.dataset.th = th; }
+  const cv = $("r-cover"); cv.style.opacity = p.cover || 0;
+  if (p.coverText && cv.dataset.done !== "1") { $("c-k").innerHTML = p.coverText[0]; $("c-big").innerHTML = p.coverText[1]; $("c-t").innerHTML = p.coverText[2]; $("c-s").innerHTML = p.coverText[3]; cv.dataset.done = "1"; }
+  const rk = $("r-rank"); rk.style.opacity = p.rankOp || 0;
+  if (!p.rank) { rk.innerHTML = ""; rk.dataset.k = ""; }
+  if (p.rank) {
+    const mx = Math.max(...p.rank.map(x => x.n)), key = p.rankN + "|" + p.rank.length;
+    if (rk.dataset.k !== key) {
+      rk.innerHTML = p.rank.map((x, i) => `<div class="row" style="opacity:${i < p.rankN ? 1 : 0};transform:translateX(${i < p.rankN ? 0 : 30}px);transition:all .35s"><div class="no">${i + 1}</div><div class="nm">${x.a}<span>${x.b}</span></div><div class="v">${x.n.toLocaleString("en-US")}</div><div class="bar" style="width:${(x.n / mx * 100).toFixed(1)}%"></div></div>`).join("");
+      rk.dataset.k = key;
+    }
+  }
   const e = $("r-end"); e.style.opacity = p.end || 0;
   if (p.endText) { $("e-big").textContent = p.endText[0]; $("e-t1").textContent = p.endText[1]; $("e-t2").textContent = p.endText[2]; }
 }"""
 
 def ease(t): return 0.5 - 0.5 * math.cos(math.pi * max(0.0, min(1.0, t)))
+COVER_T = 1.45                                              # 표지 장면 길이 (그 뒤 0.35초 동안 사라짐)
+def cover_state(t, look):
+    if not look.get("cover"): return {"theme": look.get("theme", "dark")}
+    op = 1.0 if t < COVER_T else max(0.0, 1 - (t - COVER_T) / 0.35)
+    return {"theme": look.get("theme", "dark"), "cover": round(op, 3), "coverText": look["cover"]}
 def lerp_log(a, b, t): return math.exp(math.log(a) + (math.log(b) - math.log(a)) * t)
 
 def capture(name, frames_fn, total, audio, work, page=PAGE):
@@ -118,9 +229,11 @@ def capture(name, frames_fn, total, audio, work, page=PAGE):
         pg = br.new_page(viewport={"width": W, "height": H}, device_scale_factor=2)
         pg.goto(page.as_uri() + "#en")
         pg.add_style_tag(content=REEL_CSS)
+        pg.add_style_tag(url="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,600&family=Montserrat:wght@400;500;600&family=Inter:wght@200;300;400;600&display=swap")
         pg.evaluate("h => document.body.insertAdjacentHTML('beforeend', h)", REEL_HTML)
         pg.evaluate("() => window.dispatchEvent(new Event('resize'))")
         pg.wait_for_function("() => window.MF && MF.ready()", timeout=60000)
+        pg.evaluate("() => document.fonts.ready.then(() => 1)")
         pg.wait_for_timeout(1500)
         # 미리 한 번 훑어 지도 타일을 받아 둔다
         for i in range(0, n, 6):
@@ -139,6 +252,7 @@ def capture(name, frames_fn, total, audio, work, page=PAGE):
                     "-c:v", "libx264", "-profile:v", "high", "-pix_fmt", "yuv420p", "-crf", "24", "-preset", "slow", "-tune", "animation",
                     "-r", str(FPS), "-c:a", "copy", "-shortest", "-movflags", "+faststart", str(mp4)], check=True, capture_output=True)
     # 미리보기 장면 몇 장
+    shutil.copy(frames / f"{min(n - 1, int(FPS * 0.7)):05d}.jpg", OUT / f"{name}_cover.jpg")   # 릴스 표지 = 표지 장면
     for k, t in enumerate([0.3, 0.55, 0.8, 0.97]):
         shutil.copy(frames / f"{int(n * t):05d}.jpg", OUT / f"{name}_preview{k}.jpg")
     print(mp4, round(mp4.stat().st_size / 1e6, 1), "MB", round(total, 1), "s", flush=True)
@@ -160,12 +274,12 @@ def farthest():
        title="How far can you get from a <b>convenience store</b>?", cov_text=None,
        end_text=[f"{rs:.2f} km", "The farthest you can get from a convenience store in South Korea", "Subi-myeon, Uljin · exactly as far from three stores"])
 
-def fly_story(name, page, res, lines, radii, eye, title, cov_text, end_text, fly=5, base_cam=None, region=None):
+def fly_story(name, page, res, lines, radii, eye, title, cov_text, end_text, fly=5, base_cam=None, region=None, look=None):
     """원이 자라다 fly 번째 문장에서 정답 지점으로 날아가는 이야기.
     base_cam 을 주면 그 시점에 고정해 원을 키운다(서울편). 없으면 서울→전국 자동 시점."""
-    rs = res["r"]
+    rs = res["r"]; look = look or {}
     work = Path(tempfile.mkdtemp(prefix="reel_"))
-    clips, total, audio = narrate(lines, work)
+    clips, total, audio = narrate(lines, work, look.get("voice"), look.get("lead"))
     T = [c["t0"] for c in clips] + [clips[-1]["t1"], total]
     assert len(radii) == len(T), (len(radii), len(T))
     kmx, kmy = 111.320 * 0.8090169943749475, 110.95
@@ -187,7 +301,7 @@ def fly_story(name, page, res, lines, radii, eye, title, cov_text, end_text, fly
             keys = round(u2, 3)
         end = ease((t - (total - TAIL + 0.4)) / 0.8) if t > total - TAIL + 0.4 else 0
         return {"r": r, "cam": cam, "keys": keys, "eye": eye, "showRad": True, "covText": cov_text, "region": region,
-                "title": title, "cap": cap, "end": end, "endText": end_text}
+                "title": title, "cap": cap, "end": end, "endText": end_text, **cover_state(t, look)}
     if base_cam: nat["cam"] = base_cam
     else:                                                               # 날아가기 직전의 전국 시점을 페이지에서 받아 둔다
         with sync_playwright() as pw:
@@ -203,7 +317,46 @@ def romanize(place):
     js = (ROOT / "src" / "i18n.js").as_posix()
     code = f"global.window=global;require({json.dumps(js)});process.stdout.write(romPlace(process.argv[1]))"
     r = subprocess.run(["node", "-e", code, place], capture_output=True, text=True, encoding="utf-8")
-    return r.stdout.strip() or place
+    out = r.stdout.strip() or place
+    SAY[out] = hangul_say(place)                                          # 음성은 소리 나는 대로
+    if len(out.split()) == len(place.split()):                            # 순서를 바꿔 써도 (Subi-myeon, Uljin-gun)
+        for a, b in zip(out.split(), place.split()): SAY[a] = hangul_say(b)
+    return out
+
+# 한글 → 영어 목소리가 제대로 읽는 철자 (Daechi 를 "데이치"로 읽는 문제)
+_CHO = ["g", "kk", "n", "d", "tt", "r", "m", "b", "pp", "s", "ss", "", "j", "jj", "ch", "k", "t", "p", "h"]
+_JUNG_OPEN = ["ah", "eh", "yah", "yeh", "uh", "eh", "yuh", "yeh", "oh", "wah", "weh", "weh", "yoh", "oo", "wuh", "weh", "wee", "yoo", "uh", "ee", "ee"]
+_JUNG_SHUT = ["ah", "eh", "yah", "yeh", "u", "eh", "yu", "yeh", "o", "wah", "weh", "weh", "yoh", "oo", "wo", "weh", "wee", "yoo", "u", "ee", "i"]
+_JONG = ["", "k", "k", "k", "n", "n", "n", "t", "l", "k", "m", "l", "l", "l", "p", "l", "m", "p", "p", "t", "t", "ng", "t", "t", "k", "t", "p", "t"]
+_SINO = "il ee sahm sah oh yook chil pahl goo".split()
+SAY = {}
+_LIAISON = {1: 0, 4: 2, 7: 3, 8: 5, 16: 6, 17: 7, 19: 9, 22: 12, 23: 14, 25: 16, 26: 17, 27: 11}   # 받침 → 다음 첫소리 (관악 → 과낙)
+def hangul_say(text):
+    syl = [list(divmod(ord(ch) - 0xAC00, 588)) if 0 <= ord(ch) - 0xAC00 < 11172 else ch for ch in text]
+    syl = [[x[0], x[1] // 28, x[1] % 28] if isinstance(x, list) else x for x in syl]
+    for k in range(len(syl) - 1):
+        a, b = syl[k], syl[k + 1]
+        if isinstance(a, list) and isinstance(b, list) and b[0] == 11 and a[2] in _LIAISON:
+            b[0] = _LIAISON[a[2]]; a[2] = 0
+        elif isinstance(a, list) and isinstance(b, list) and b[0] == 5 and a[2] in (4, 8):
+            a[2] = 8; b.append("l")                     # 신림 → 실림 shil-lim
+    parts, cur = [], ""
+    for x in syl:
+        if isinstance(x, list):
+            cho, jung, jong = x[:3]
+            v = (_JUNG_SHUT if jong else _JUNG_OPEN)[jung]
+            if cho == 11 and jung == 19: v = "wee"                         # 의성 → wee-sung
+            if cho == 9 and v.startswith(("ee", "i", "y", "wee")): sy = "sh" + v.lstrip("y") + _JONG[jong]      # 시·신 → shee·shin
+            else: sy = ("l" if len(x) > 3 else _CHO[cho]) + v + _JONG[jong]
+            cur += ("-" if cur else "") + sy
+        elif x.isdigit():
+            cur += (" " if cur else "") + _SINO[int(x) - 1]
+        else:
+            if cur: parts.append(cur); cur = ""
+            parts.append(x)
+    if cur: parts.append(cur)
+    out = "".join(parts)
+    return out[:1].upper() + out[1:]
 
 def episode(ep):
     ds, reg = ep["dataset"], ep.get("region", "south")
@@ -225,6 +378,8 @@ def episode(ep):
     v = {"n": f"{n:,}", "r50": f(r50), "r90": f(r90), "rs": f"{rs:.1f}", "rs2": f"{rs:.2f}", "where": where, "area": area,
          "walk": round(rs / 4.5 * 60)}                                 # 걸어서 몇 분 (시속 4.5 km)
     say_where = f"in {where}" + (", right at the edge of the DMZ" if dmz else "")
+    if ep.get("type") == "rank": return rank_episode(ep)
+    if ep.get("type") == "tour": return tour_episode(ep)
     lines = [
         {"say": ep["l1"].format(**v), "cap": ep.get("c1", ep["l1"]).format(**v)},
         {"say": "Draw a circle around every one, and let them grow.", "cap": "Draw a circle around every one. Let them grow."},
@@ -235,6 +390,14 @@ def episode(ep):
         {"say": ep["close"].format(**v), "cap": ep.get("close_cap", ep["close"]).format(**v)},
     ]
     radii = [max(0.05, r50 * 0.12), r50 * 0.35, r50, r90, min(rs * 0.9, r90 * 1.7), rs, rs, rs, rs]
+    fly = 4
+    if ep.get("l2"):                                                    # 첫 문장 뒤에 한 문장 더 (예: 제주에 호텔이 가장 많다)
+        lines.insert(1, {"say": ep["l2"].format(**v), "cap": ep.get("c2", ep["l2"]).format(**v)})
+        radii.insert(1, radii[0] * 1.4); fly = 5
+    for x in ep.get("story", []):                                       # 정답 뒤 동네 이야기 → 마무리
+        lines.insert(len(lines) - 1, {"say": x["say"].format(**v), "cap": x.get("cap", x["say"]).format(**v)}); radii.insert(len(radii) - 2, rs)
+    look = {"theme": ep.get("theme", "dark"), "voice": ep.get("voice"), "lead": 1.75 if ep.get("cover") else None,
+            "cover": [x.format(**v) for x in ep["cover"]] if ep.get("cover") else None}
     base_cam = None
     if ep.get("bbox"):                                                  # 고정 시점 (서울편)
         lo0, la0, lo1, la1 = ep["bbox"]; kmx, kmy = 111.320 * 0.8090169943749475, 110.95
@@ -243,10 +406,131 @@ def episode(ep):
         base_cam = {"s": s, "cx": (x0 + x1) / 2, "cy": (y0 + y1) / 2 + (480 - 470) / s}
     name = ep["id"]
     mp4 = fly_story(name, ROOT / "out" / f"mcfarthest-kr{suf}.html", res, lines, radii, ep["eye"].format(**v), ep["title"],
-                    ep.get("cov_text"), [f"{rs:.2f} km", ep["end1"].format(**v), (where + (" · at the edge of the DMZ" if dmz else ""))],
-                    fly=4, base_cam=base_cam, region=reg)
+                    ep.get("cov_text") or f"of the land has a {ep['thing']} this close", [f"{rs:.2f} km", ep["end1"].format(**v), (where + (" · at the edge of the DMZ" if dmz else ""))],
+                    fly=fly, base_cam=base_cam, region=reg, look=look)
     cap = ep["caption"].format(**v, half=f(r50)) + "\n\nInteractive map in 7 languages: desika.github.io/mcfarthest-kr\n\n" + " ".join(ep["tags"])
     (OUT / f"{name}_caption.txt").write_text(cap, encoding="utf-8")
+    return mp4
+
+def rank_episode(ep):
+    """한국 ○○은 이런 곳 → ○○가 가장 많은 동네로 날아감 → 1~5위 → 마무리.
+    ep["acts"]: 문장마다 nat(전국) · fly(1위 동네로) · rank(목록 펼침) · stay"""
+    ds = ep["dataset"]; suf = "_" + ds
+    RK = json.load(open(ROOT / "out" / "rank_stats.json", encoding="utf-8"))[ep.get("rank_key", ds)]
+    top = RK[ep.get("level", "dong")][:5]
+    SHORT = {"서울특별시": "Seoul", "부산광역시": "Busan", "대구광역시": "Daegu", "인천광역시": "Incheon", "광주광역시": "Gwangju", "대전광역시": "Daejeon", "울산광역시": "Ulsan"}
+    rows = []
+    for x in top:
+        sgg = romanize(x["sgg"]); dong = romanize(x["dong"]) if x.get("dong") else sgg
+        city = SHORT.get(x["sido"], "")
+        rows.append({"a": dong, "b": (sgg + (", " + city if city else "")) if x.get("dong") else city, "n": x["n"]})
+    sj = json.load(open(ROOT / "out" / f"sets{suf}.json", encoding="utf-8")); S = sj["sets"]["all"]
+    res = S["results"]["south"]; rs = res["r"]
+    v = {"n": f"{RK['n']:,}", "rs": f"{rs:.1f}", "top": rows[0]["a"], "top_b": rows[0]["b"], "top_n": f"{rows[0]['n']:,}",
+         "second": rows[1]["a"], "second_b": rows[1]["b"], "third": rows[2]["a"], "third_b": rows[2]["b"],
+         "sgg1": romanize(RK["sgg"][0]["sgg"]), "sgg1_n": f"{RK['sgg'][0]['n']:,}"}
+    lines = [{"say": l["say"].format(**v), "cap": l.get("cap", l["say"]).format(**v)} for l in ep["lines"]]
+    acts = ep["acts"]; assert len(acts) == len(lines)
+    look = {"theme": ep.get("theme", "dark"), "voice": ep.get("voice"), "lead": 1.75 if ep.get("cover") else None,
+            "cover": [x.format(**v) for x in ep["cover"]] if ep.get("cover") else None}
+    work = Path(tempfile.mkdtemp(prefix="reel_"))
+    clips, total, audio = narrate(lines, work, look["voice"], look["lead"])
+    T = [c["t0"] for c in clips] + [clips[-1]["t1"], total]
+    kmx, kmy = 111.320 * 0.8090169943749475, 110.95
+    lo0, la0, lo1, la1 = top[0]["bbox"]
+    x0, x1 = (lo0 - 124.55) * kmx, (lo1 - 124.55) * kmx; y0, y1 = (38.68 - la1) * kmy, (38.68 - la0) * kmy
+    sd = max(6.0, min(220.0, 230 / (x1 - x0 + 0.5), 300 / (y1 - y0 + 0.5)))
+    dist = {"s": sd, "cx": (x0 + x1) / 2 - (395 - 270) / sd, "cy": (y0 + y1) / 2 - (470 - 480) / sd}   # 1위 동네를 화면 오른쪽 가운데
+    with sync_playwright() as pw:
+        br = pw.chromium.launch(channel="chrome"); pg = br.new_page(viewport={"width": W, "height": H}, device_scale_factor=2)
+        pg.goto((ROOT / "out" / f"mcfarthest-kr{suf}.html").as_uri() + "#en"); pg.add_style_tag(content=REEL_CSS); pg.evaluate("() => window.dispatchEvent(new Event('resize'))")
+        pg.wait_for_function("() => window.MF && MF.ready()", timeout=60000)
+        nat = pg.evaluate("r => MF.camera(r)", 30); br.close()
+    nat["cy"] += 40 / nat["s"]                                            # 전국 지도를 조금 아래로 (제목 자리)
+    i_fly = acts.index("fly"); i_rank = acts.index("rank") if "rank" in acts else i_fly + 1
+    r_nat0, r_nat1, r_loc = ep.get("r_nat", [0.6, 2.2]) + [None]
+    r_loc = ep.get("r_local", 0.12)
+    def at(t):
+        k = next((i for i in range(len(T) - 1) if T[i] <= t < T[i + 1]), len(T) - 2)
+        if t < T[i_fly]:
+            u = ease(t / T[i_fly]); r = lerp_log(r_nat0, r_nat1, u); cam = nat
+        else:
+            u2 = ease((t - T[i_fly]) / max(1e-6, T[i_fly + 1] - T[i_fly]))
+            cam = {"s": lerp_log(nat["s"], dist["s"], u2), "cx": nat["cx"] + (dist["cx"] - nat["cx"]) * u2, "cy": nat["cy"] + (dist["cy"] - nat["cy"]) * u2}
+            r = lerp_log(r_nat1, r_loc, u2)
+        rank_op = 0.0 if t < T[i_fly] + 0.6 else min(1.0, (t - T[i_fly] - 0.6) / 0.4)
+        rank_n = 1 if t < T[i_rank] else (3 if t < (T[i_rank] + T[i_rank + 1]) / 2 else 5)
+        cap = next((c["cap"] for c in clips if c["t0"] - 0.15 <= t <= c["t1"] + GAP * 0.8), "")
+        end = ease((t - (total - TAIL + 0.4)) / 0.8) if t > total - TAIL + 0.4 else 0
+        return {"r": r, "cam": cam, "keys": 0, "eye": ep["eye"].format(**v), "showRad": False, "title": ep["title"],
+                "cap": cap, "capTop": 690, "end": end, "endText": [x.format(**v) for x in ep["end"]],
+                "rank": rows, "rankN": rank_n, "rankOp": round(rank_op, 3), **cover_state(t, look)}
+    mp4 = capture(ep["id"], at, total, audio, work, ROOT / "out" / f"mcfarthest-kr{suf}.html")
+    cap = ep["caption"].format(**v) + "\n\nInteractive map in 7 languages: desika.github.io/mcfarthest-kr\n\n" + " ".join(ep["tags"])
+    (OUT / f"{ep['id']}_caption.txt").write_text(cap, encoding="utf-8")
+    return mp4
+
+def tour_episode(ep):
+    """전국 → stops 를 차례로 날아가며 들르고, 들를 때마다 순위판에 한 줄씩 쌓는다.
+    ep["acts"]: 문장마다 nat · stop0 · stop1 … · stay"""
+    import csv, statistics
+    ds = ep["dataset"]; suf = "_" + ds
+    rows_all = list(csv.DictReader(open(ROOT / "data" / f"chain_{ds}.csv", encoding="utf-8")))
+    kmx, kmy = 111.320 * 0.8090169943749475, 110.95
+    stops = []
+    for st_ in ep["stops"]:
+        rr = [r for r in rows_all if r["sido"].startswith(st_["sido"]) and r["sigungu"] == st_["sgg"] and (not st_.get("dong") or r["dong"] == st_["dong"])]
+        lo = sorted(float(r["lon"]) for r in rr); la = sorted(float(r["lat"]) for r in rr)
+        q = lambda a, f: a[min(len(a) - 1, max(0, int(len(a) * f)))]
+        lo0, lo1, la0, la1 = q(lo, .05), q(lo, .95), q(la, .05), q(la, .95)
+        x0, x1 = (lo0 - 124.55) * kmx, (lo1 - 124.55) * kmx; y0, y1 = (38.68 - la1) * kmy, (38.68 - la0) * kmy
+        sd = max(6.0, min(200.0, 210 / (x1 - x0 + 0.6), 260 / (y1 - y0 + 0.6)))
+        name = romanize(st_["dong"]) if st_.get("dong") else romanize(st_["sgg"])
+        stops.append({"cam": {"s": sd, "cx": (x0 + x1) / 2 - (395 - 270) / sd, "cy": (y0 + y1) / 2 - (470 - 480) / sd},
+                      "row": {"a": name, "b": st_["label"], "n": len(rr)}, "n": len(rr)})
+    v = {"n": f"{len(rows_all):,}"}
+    for i, x in enumerate(stops): v[f"s{i}"] = x["row"]["a"]; v[f"s{i}_n"] = f"{x['n']:,}"; v[f"s{i}_b"] = x["row"]["b"]
+    lines = [{"say": l["say"].format(**v), "cap": l.get("cap", l["say"]).format(**v)} for l in ep["lines"]]
+    acts = ep["acts"]; assert len(acts) == len(lines)
+    look = {"theme": ep.get("theme", "dark"), "voice": ep.get("voice"), "lead": 1.75 if ep.get("cover") else None,
+            "cover": [x.format(**v) for x in ep["cover"]] if ep.get("cover") else None}
+    work = Path(tempfile.mkdtemp(prefix="reel_"))
+    clips, total, audio = narrate(lines, work, look["voice"], look["lead"])
+    T = [c["t0"] for c in clips] + [clips[-1]["t1"], total]
+    page = ROOT / "out" / f"mcfarthest-kr{suf}.html"
+    with sync_playwright() as pw:
+        br = pw.chromium.launch(channel="chrome"); pg = br.new_page(viewport={"width": W, "height": H}, device_scale_factor=2)
+        pg.goto(page.as_uri() + "#en"); pg.add_style_tag(content=REEL_CSS); pg.evaluate("() => window.dispatchEvent(new Event('resize'))")
+        pg.wait_for_function("() => window.MF && MF.ready()", timeout=60000)
+        nat = pg.evaluate("r => MF.camera(r)", 30); br.close()
+    nat["cy"] += 40 / nat["s"]
+    # 문장마다 출발·도착 시점
+    seq = []                                                          # (시작시각, 출발 cam, 도착 cam, 반지름 출발, 도착)
+    cur, r_cur = nat, ep.get("r_nat", [0.4, 1.6])[0]
+    r_nat1, r_loc = ep.get("r_nat", [0.4, 1.6])[1], ep.get("r_local", 0.06)
+    visited = []
+    for i, a in enumerate(acts):
+        if a.startswith("stop"):
+            k = int(a[4:]); dst = stops[k]["cam"]; seq.append((T[i], cur, dst, r_cur, r_loc)); cur, r_cur = dst, r_loc; visited.append((T[i], k))
+        elif a == "nat":
+            seq.append((T[i], cur, nat, r_cur, r_nat1 if i == acts.index("nat") or True else r_cur)); cur, r_cur = nat, r_nat1
+    def at(t):
+        cam, r = nat, ep.get("r_nat", [0.4, 1.6])[0]
+        for (t0, a, b, ra, rb) in seq:
+            if t < t0: break
+            dur = 1.5 if a is not b else 1.0
+            u = ease((t - t0) / dur) if a is not b else ease((t - t0) / max(1e-6, (T[1] if len(T) > 1 else 3) - T[0]))
+            cam = {"s": lerp_log(a["s"], b["s"], u), "cx": a["cx"] + (b["cx"] - a["cx"]) * u, "cy": a["cy"] + (b["cy"] - a["cy"]) * u}
+            r = lerp_log(ra, rb, u)
+        shown = [stops[k]["row"] for (t0, k) in visited if t >= t0 + 0.9]
+        cap = next((c["cap"] for c in clips if c["t0"] - 0.15 <= t <= c["t1"] + GAP * 0.8), "")
+        end = ease((t - (total - TAIL + 0.4)) / 0.8) if t > total - TAIL + 0.4 else 0
+        return {"r": r, "cam": cam, "keys": 0, "eye": ep["eye"].format(**v), "showRad": False, "title": ep["title"],
+                "cap": cap, "capTop": 690, "end": end, "endText": [x.format(**v) for x in ep["end"]],
+                "rank": shown or None, "rankN": len(shown), "rankOp": 1.0 if shown else 0.0, **cover_state(t, look)}
+    mp4 = capture(ep["id"], at, total, audio, work, page)
+    cap = ep["caption"].format(**v) + "\n\nInteractive map in 7 languages: desika.github.io/mcfarthest-kr\n\n" + " ".join(ep["tags"])
+    (OUT / f"{ep['id']}_caption.txt").write_text(cap, encoding="utf-8")
     return mp4
 
 # ── 편: 담배 살 수 있는 곳에서 가장 먼 곳 ──

@@ -1,11 +1,12 @@
-"""매주 릴스 자동 게시 — PC 를 켜면(로그온) 그리고 매일 낮에 한 번 실행
+"""릴스 자동 게시 — PC 를 켜면(로그온) 그리고 매일 낮에 한 번 실행 (PC 켜는 날 1편)
 
   python tools/weekly_reel.py            # 할 일 있으면 함
   python tools/weekly_reel.py --dry      # 만들기만, 올리지 않음
-  python tools/weekly_reel.py --force    # 7일이 안 지났어도 다음 편
+  python tools/weekly_reel.py --force    # 오늘 이미 올렸어도 다음 편
+  python tools/weekly_reel.py --force --ready   # 이미 만들어 둔 영상(사람이 확인한 것)을 그대로 올림
 
 규칙
-  - 마지막 게시 뒤 7일이 지났을 때만 다음 편을 올린다 (주 1편)
+  - 오늘(KST) 아직 안 올렸을 때만 다음 편을 올린다 (PC 켜는 날 하루 1편)
   - 한국시각 09~22시에만 올린다. 밖이면 다음 실행 때
   - 대기열 tools/episodes.json 에서 아직 안 올린 첫 편 → 영상 → 서버 공개 경로 → post_reel.sh
   - 기록 out/reels/state.json · 로그 out/reels/weekly.log
@@ -18,7 +19,8 @@ ROOT = Path(__file__).resolve().parent.parent
 REELS = ROOT / "out" / "reels"; REELS.mkdir(parents=True, exist_ok=True)
 STATE = REELS / "state.json"; LOG = REELS / "weekly.log"; LOCK = REELS / "weekly.lock"
 PY = sys.executable
-KEY = r"E:\26dev-1\0_pem\oracle.ssh-key-2026-04-30.key"; HOST = "ubuntu@159.54.161.32"
+ENV = dict(l.split("=", 1) for l in (ROOT / ".env").read_text(encoding="utf-8").splitlines() if "=" in l and not l.startswith("#"))
+KEY, HOST = ENV["REEL_SSH_KEY"].strip(), ENV["REEL_SSH_HOST"].strip()     # 서버 주소·키 위치는 .env (공개 저장소에 두지 않음)
 SSH = ["ssh", "-i", KEY, "-o", "ConnectTimeout=20", "-o", "BatchMode=yes", HOST]
 SCP = ["scp", "-q", "-i", KEY, "-o", "ConnectTimeout=20", "-o", "BatchMode=yes"]
 PUB_DIR, PUB_URL = "/home/ubuntu/abc-news-learner/cards/reels", "https://learner.rabotakorea.online/cards/reels"
@@ -47,8 +49,8 @@ def main():
     state = json.loads(STATE.read_text(encoding="utf-8")) if STATE.exists() else {"posted": []}
     if state["posted"] and "--force" not in args:
         last = dt.datetime.fromisoformat(state["posted"][-1]["at"])
-        if now - last < dt.timedelta(days=7):
-            log(f"할 일 없음 — 마지막 게시 {last:%m-%d %H:%M}, 다음은 {last + dt.timedelta(days=7):%m-%d} 이후"); return
+        if last.astimezone(KST).date() >= now.date():
+            log(f"할 일 없음 — 오늘 이미 올림 ({last:%m-%d %H:%M}), 다음은 내일"); return
     if not (9 <= now.hour < 22) and "--force" not in args and "--dry" not in args:
         log(f"게시 시간 아님 ({now:%H:%M} KST) — 09~22시에 다시"); return
     eps = json.loads((ROOT / "tools" / "episodes.json").read_text(encoding="utf-8"))
@@ -63,13 +65,16 @@ def main():
     if not (ROOT / "out" / f"mcfarthest-kr{suf}.html").exists() or not (ROOT / "out" / f"sets{suf}.json").exists():
         env = {**os.environ, "MF_DATASET": ep["dataset"]}
         for s in ("src/compute_sets.py", "src/build_data.py", "src/build_page.py"): run([PY, "-I", s], env=env)
-    run([PY, "-I", "tools/make_reel.py", name], timeout=7200)
-    mp4, cap = REELS / f"{name}.mp4", REELS / f"{name}_caption.txt"
+    mp4, cap, cov = REELS / f"{name}.mp4", REELS / f"{name}_caption.txt", REELS / f"{name}_cover.jpg"
+    if "--ready" not in args or not mp4.exists(): run([PY, "-I", "tools/make_reel.py", name], timeout=7200)
     if not mp4.exists() or mp4.stat().st_size < 1_000_000: raise RuntimeError("영상이 만들어지지 않음")
     log("영상", mp4.name, round(mp4.stat().st_size / 1e6, 1), "MB")
     if "--dry" in args: log("--dry: 올리지 않음"); return
     run(SCP + [str(mp4), f"{HOST}:{PUB_DIR}/"]); run(SCP + [str(cap), f"{HOST}:/home/ubuntu/mcfarthest-kr/reels/"])
-    out = run(SSH + [f"cd /home/ubuntu/mcfarthest-kr/reels && bash post_reel.sh {PUB_URL}/{mp4.name} {cap.name}"], timeout=900)
+    cover = ""
+    if cov.exists(): run(SCP + [str(cov), f"{HOST}:{PUB_DIR}/"]); cover = f"{PUB_URL}/{cov.name}"     # 표지 = 첫 장면
+    else: log("표지 없음 — 인스타 기본 표지로")
+    out = run(SSH + [f"cd /home/ubuntu/mcfarthest-kr/reels && bash post_reel.sh {PUB_URL}/{mp4.name} {cap.name} {cover}"], timeout=900)
     ok = [l for l in out.splitlines() if l.startswith("OK ")]
     if not ok: raise RuntimeError("게시 결과 없음\n" + out[-800:])
     _, mid, link = ok[-1].split(" ", 2)
